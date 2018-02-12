@@ -1,0 +1,24 @@
+{% extends "stats/table_base.html" %}
+
+{% set table_header="Clerks breakdown" %}
+
+{% block table_content %}
+<table class="table table-striped table-bordered table-hover" id="clerks-breakdown-table">
+    <thead>
+        <tr>
+            <th>Clerk</th>
+            <th>Sale</th>
+            <th>Total (&#163;)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for clerk in clerks_breakdown_data.values() %}
+        <tr>
+            <td>{{ clerk.name }}</td>
+            <td>{{ clerk.qty_sum }}</td>
+            <td>{{ clerk.price_sum }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

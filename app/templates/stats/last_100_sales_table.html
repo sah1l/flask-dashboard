@@ -1,0 +1,30 @@
+{% extends "stats/table_base.html" %}
+
+{% set table_header="Last 100 sales" %}
+
+{% block table_content %}
+<table class="table stats-table table-striped table-bordered table-hover" id="last-100-sales-table">
+    <thead>
+        <tr>
+            <th>Num</th>
+            <th>Time</th>
+            <th>Sale ID</th>
+            <th>Site</th>
+            <th>Sale Total (&#163;)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for sale in last_100_sales_data.values() %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ sale.date_time }}</td>
+            <td>{{ sale.id }}</td>
+            <td>{{ sale.site }}</td>
+            <td>{{ sale.sales_total }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% set total_sales = last_100_sales_data.values()|sum(attribute='sales_total') %}
+<p>Total sales: {{ '%0.2f'| format(total_sales|float) }}</p>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "stats/table_base.html" %}
+
+{% set table_header="PLU sales" %}
+
+{% block table_content %}
+<table class="table table-striped table-bordered table-hover" id="plu-sales-table">
+    <thead>
+        <tr>
+            <th>Descriptor</th>
+            <th>Sale</th>
+            <th>Total (&#163;)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for plu in plu_sales_data.values() %}
+        <tr>
+            <td>{{ plu.name }}</td>
+            <td>{{ plu.qty_sum }}</td>
+            <td>{{ plu.price_sum }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% set total_qty = plu_sales_data.values()|sum(attribute='qty_sum') %}
+{% set total_price = plu_sales_data.values()|sum(attribute='price_sum') %}
+<p>Total quantity: {{ total_qty }}</p>
+<p>Total price: {{ '%0.2f'| format(total_price|float) }}</p>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "stats/table_base.html" %}
+
+{% set table_header="Free Function" %}
+
+{% block table_content %}
+<table class="table stats-table table-striped table-bordered table-hover" id="free-function-table">
+    <thead>
+        <tr>
+            <th>Free Function</th>
+            <th>Quantity</th>
+            <th>Total (&#163;)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ff in free_function_data.values() %}
+        <tr>
+            <td>{{ ff.name }}</td>
+            <td>{{ ff.qty_sum }}</td>
+            <td>{{ ff.price_sum }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% set total_qty = free_function_data.values()|sum(attribute='qty_sum') %}
+{% set total_price = free_function_data.values()|sum(attribute='price_sum') %}
+<p>Total quantity: {{ total_qty }}</p>
+<p>Total price: {{ '%0.2f'| format(total_price|float) }}</p>
+{% endblock %}

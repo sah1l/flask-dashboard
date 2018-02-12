@@ -1,0 +1,11 @@
+/__pycache__
+app/__pycache__
+app/mod_db_manage/__pycache__
+app/mod_db_manage/data
+app/mod_stats/__pycache__
+/logs
+/venv
+*.pyc
+ectouch.sock
+*.log
+config.py

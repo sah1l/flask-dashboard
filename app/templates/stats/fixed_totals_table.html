@@ -1,0 +1,24 @@
+{% extends "stats/table_base.html" %}
+
+{% set table_header="Fixed totals" %}
+
+{% block table_content %}
+<table class="table table-striped table-bordered table-hover" id="fixed-totals-table">
+    <thead>
+        <tr>
+            <th>Totalizer</th>
+            <th>Quantity</th>
+            <th>Total (&#163;)</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ft in fixed_totalizer_data.values() %}
+        <tr>
+            <td>{{ ft.name }}</td>
+            <td>{{ ft.qty_sum }}</td>
+            <td>{{ ft.price_sum }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
