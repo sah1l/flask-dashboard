@@ -11,7 +11,13 @@
 <script type=text/javascript src={{ url_for('static', filename='app.js') }}></script>
 {% endblock %}
 
-{% block header %}{% endblock %}
+{% block header %}
+    {% if current_user.is_anonymous %}
+    {#    do nothing for now    #}
+    {% else %}
+    <a href="{{ url_for('auth.logout') }}">Logout</a>
+    {% endif %}
+{% endblock %}
 
 {% block body %}{% endblock %}
 

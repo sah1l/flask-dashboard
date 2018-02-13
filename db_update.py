@@ -7,6 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from app import db, base
 from app.models import FixedTotalizer, FreeFunction, Department, Group, PLU, Clerk, Customer, \
                         MixMatch, Order, OrderLine, PLU2nd, Tax
+from app.mod_auth.models import User
 from app.mod_db_manage.xml_parser import get_orders_gen, get_order_items_gen, get_fixed_total_gen, get_free_func_gen, \
                         get_department_gen, get_group_gen, get_plu_gen, get_clerk_gen, get_customer_gen, \
                         get_mixmatch_gen, get_plu2nd_gen, get_tax_gen
@@ -378,20 +379,34 @@ class DBInsert:
 
 if __name__ == "__main__":
     session_maker = sessionmaker(db)
-    db_insert = DBInsert(session_maker)
-    db_insert.create_all_tables(db)
+    # db_insert = DBInsert(session_maker)
+    # db_insert.create_all_tables(db)
+    #
+    # db_insert.insert_fixed_totalizer()
+    # db_insert.insert_free_function()
+    # db_insert.insert_group()
+    # db_insert.insert_departments()
+    # db_insert.insert_mixmatch()
+    # db_insert.insert_taxes()
+    # db_insert.insert_plu()
+    # db_insert.insert_plu_2nd()
+    # db_insert.insert_clerks()
+    # db_insert.insert_customers()
+    # db_insert.insert_order_data()
+    #
+    # db_insert.close_session()
 
-    db_insert.insert_fixed_totalizer()
-    db_insert.insert_free_function()
-    db_insert.insert_group()
-    db_insert.insert_departments()
-    db_insert.insert_mixmatch()
-    db_insert.insert_taxes()
-    db_insert.insert_plu()
-    db_insert.insert_plu_2nd()
-    db_insert.insert_clerks()
-    db_insert.insert_customers()
-    db_insert.insert_order_data()
+    session = session_maker()
+    base.metadata.create_all(db)
 
-    db_insert.close_session()
+    user = User(username="user1", email="user1@mail.com")
+    user.set_password("somepass")
+    print(user)
+    if user.check_password("somepass"):
+        session.add(user)
+        session.commit()
+        print("user added")
+    else:
+        print("hashes don't match")
+
 

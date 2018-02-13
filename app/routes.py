@@ -1,10 +1,12 @@
+from flask import url_for, redirect
+from flask_login import current_user
+
 from app import app
 
 
 @app.route('/')
-@app.route('/index')
 def index():
-    return "<h1 style='color:blue'>Index page</h1>"
+    if current_user.is_authenticated:
+        return redirect(url_for('stats.show_today'))
 
-
-
+    return redirect(url_for("auth.login"))
