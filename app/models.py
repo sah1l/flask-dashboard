@@ -1,8 +1,7 @@
-from datetime import datetime
-from sqlalchemy import Column, String, Text, Integer, Float, DateTime, ForeignKey
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy import Column, String, Integer, Float, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
 
-from app import db, base
+from app import base
 
 
 class Master(base): 
@@ -118,7 +117,7 @@ class PLU(Master):
 
     def __repr__(self):
         return "PLU: id=%s name=%s number=%s group_number=%s department_number=%s price=%s filepath=%s" % (
-                self.id, self.name, self.number, self.group_number, self.department_number, \
+                self.id, self.name, self.number, self.group_number, self.department_number,
                 self.price, self.filepath
             )
 
@@ -138,7 +137,7 @@ class PLU2nd(Master):
 
     def __repr__(self):
         return "PLU2nd: id=%s name=%s number=%s group_number=%s department_number=%s price=%s filepath=%s" % (
-                self.id, self.name, self.number, self.group_number, self.department_number, \
+                self.id, self.name, self.number, self.group_number, self.department_number,
                 self.price, self.filepath
             )
 

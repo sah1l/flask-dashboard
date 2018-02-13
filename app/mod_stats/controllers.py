@@ -1,16 +1,20 @@
 import datetime
 from dateutil.relativedelta import relativedelta
 from flask import Blueprint, render_template
-from sqlalchemy import and_
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import OperationalError
 
-from app import db
-from app.models import OrderLine, Order
 from app.mod_stats.stats_utils import StatsDataExtractor, calc_quarter_timerange
 
 
 # define Blueprint for statistics module
 mod_stats = Blueprint('stats', __name__, url_prefix='/statistics')
+
+
+@mod_stats.errorhandler(OperationalError)
+def handle_operational_error(error):
+    """Handles situation when there's no connection with database"""
+    return "No connection with database"
+
 
 @mod_stats.route("/", methods=["GET"])
 def show_data():
@@ -36,7 +40,7 @@ def show_data():
         last_100_sales_data=last_100_sales_data,
         clerks_breakdown_data=clerks_breakdown_data,
         free_function_data=free_function_data
-        )
+    )
 
 
 @mod_stats.route("/group_1", methods=["GET"])

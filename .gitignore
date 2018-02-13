@@ -5,6 +5,7 @@ app/mod_db_manage/data
 app/mod_stats/__pycache__
 /logs
 /venv
+/.idea
 *.pyc
 ectouch.sock
 *.log

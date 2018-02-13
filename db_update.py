@@ -1,5 +1,8 @@
+"""
+Connects to database and adds new data from XML files
+"""
+
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import IntegrityError
 
 from app import db, base
 from app.models import FixedTotalizer, FreeFunction, Department, Group, PLU, Clerk, Customer, \
@@ -12,17 +15,15 @@ from app.mod_db_manage.xml_parser import get_orders_gen, get_order_items_gen, ge
 MAGIC_INDRAWER_NUMBER = 3  # a number to calculate in-drawer records
 
 
-class DBInserter():
+class DBInsert:
     """
     Inserts new data from XML files to database
     """
-    def __init__(self, session_maker):
-        self.session = session_maker()
+    def __init__(self, _session_maker):
+        self.session = _session_maker()
 
-    
-    def create_all_tables(self, db):
-        base.metadata.create_all(db)
-
+    def create_all_tables(self, _db):
+        base.metadata.create_all(_db)
 
     def db_check_duplicate(self, classname, **kwargs):
         """
@@ -35,10 +36,8 @@ class DBInserter():
         else:
             return False
 
-
     def close_session(self):
         self.session.close()
-
 
     def insert_fixed_totalizer(self):
         fixed_totalizers = get_fixed_total_gen()
@@ -48,13 +47,15 @@ class DBInserter():
             if ft_duplicate:
                 continue
 
-            db_ft = FixedTotalizer(number=ft.number, date_time=ft.date_time, filepath=ft.filepath, data_dir=ft.data_dir,\
-                name=ft.name
-                )
+            db_ft = FixedTotalizer(number=ft.number,
+                                   date_time=ft.date_time,
+                                   filepath=ft.filepath,
+                                   data_dir=ft.data_dir,
+                                   name=ft.name
+                                   )
             self.session.add(db_ft)
             self.session.commit()
             print(db_ft)
-
 
     def insert_free_function(self):
         free_functions = get_free_func_gen()
@@ -64,12 +65,16 @@ class DBInserter():
             if ff_duplicate:
                 continue
 
-            db_ff = FreeFunction(number=ff.number, date_time=ff.date_time, filepath=ff.filepath, data_dir=ff.data_dir, \
-                 name=ff.name, function_number=ff.function_number)
+            db_ff = FreeFunction(number=ff.number,
+                                 date_time=ff.date_time,
+                                 filepath=ff.filepath,
+                                 data_dir=ff.data_dir,
+                                 name=ff.name,
+                                 function_number=ff.function_number
+                                 )
             self.session.add(db_ff)
             self.session.commit()
             print(db_ff)
-
 
     def insert_group(self):
         groups = get_group_gen()
@@ -79,11 +84,15 @@ class DBInserter():
             if group_duplicate:
                 continue
 
-            db_group = Group(number=group.number, name=group.name, data_dir=group.data_dir)
+            db_group = Group(number=group.number,
+                             date_time=group.date_time,
+                             filepath=group.filepath,
+                             data_dir=group.data_dir,
+                             name=group.name,
+                             )
             self.session.add(db_group)
             self.session.commit()
             print(db_group)
-
 
     def insert_departments(self):
         departments = get_department_gen()
@@ -98,11 +107,15 @@ class DBInserter():
             if not valid_group:
                 dep.group_number = None
 
-            db_dep = Department(number=dep.number, date_time=dep.date_time, filepath=dep.filepath, data_dir=dep.data_dir, \
-                name=dep.name, group_number=dep.group_number)
+            db_dep = Department(number=dep.number,
+                                date_time=dep.date_time,
+                                filepath=dep.filepath,
+                                data_dir=dep.data_dir,
+                                name=dep.name,
+                                group_number=dep.group_number
+                                )
             self.session.add(db_dep)
             print(db_dep)
-
 
     def insert_mixmatch(self):
         mixmatch = get_mixmatch_gen()
@@ -112,12 +125,18 @@ class DBInserter():
             if mm_duplicate:
                 continue
 
-            db_mm = MixMatch(number=mm.number, date_time=mm.date_time, filepath=mm.filepath, data_dir=mm.data_dir, \
-                name=mm.name, operation_type=mm.operation_type, qty_req=mm.qty_req, amount=mm.amount)
+            db_mm = MixMatch(number=mm.number,
+                             date_time=mm.date_time,
+                             filepath=mm.filepath,
+                             data_dir=mm.data_dir,
+                             name=mm.name,
+                             operation_type=mm.operation_type,
+                             qty_req=mm.qty_req,
+                             amount=mm.amount
+                             )
             self.session.add(db_mm)
             self.session.commit()
             print(db_mm)
-
 
     def insert_taxes(self):
         taxes = get_tax_gen()
@@ -127,12 +146,16 @@ class DBInserter():
             if tax_duplicate:
                 continue
 
-            db_tax = Tax(number=tax.number, date_time=tax.date_time, filepath=tax.filepath, data_dir=tax.data_dir, \
-                name=tax.name, rate=tax.rate)
+            db_tax = Tax(number=tax.number,
+                         date_time=tax.date_time,
+                         filepath=tax.filepath,
+                         data_dir=tax.data_dir,
+                         name=tax.name,
+                         rate=tax.rate
+                         )
             self.session.add(db_tax)
             self.session.commit()
             print(db_tax)
-
 
     def insert_plu(self):
         plu_s = get_plu_gen()
@@ -159,10 +182,17 @@ class DBInserter():
             if not valid_tax:
                 plu.tax_number = None
 
-            db_plu = PLU(number=plu.number, date_time=plu.date_time, filepath=plu.filepath, data_dir=plu.data_dir, \
-                name=plu.name, group_number=plu.group_number, department_number=plu.department_number, \
-                price=plu.price, random_code=plu.random_code, tax_number=plu.tax_number, mix_match=plu.mix_match, \
-                description=plu.description)
+            db_plu = PLU(number=plu.number,
+                         date_time=plu.date_time,
+                         filepath=plu.filepath,
+                         data_dir=plu.data_dir,
+                         name=plu.name,
+                         group_number=plu.group_number,
+                         department_number=plu.department_number,
+                         price=plu.price,
+                         tax_number=plu.tax_number,
+                         mix_match=plu.mix_match
+                         )
             self.session.add(db_plu)
             self.session.commit()
             print(db_plu)
@@ -188,13 +218,19 @@ class DBInserter():
             if not valid_tax:
                 plu.tax_number = None
 
-            db_plu = PLU2nd(number=plu.number, date_time=plu.date_time, filepath=plu.filepath, data_dir=plu.data_dir, \
-                name=plu.name, group_number=plu.group_number, department_number=plu.department_number, \
-                price=plu.price, tax_number=plu.tax_number)
+            db_plu = PLU2nd(number=plu.number,
+                            date_time=plu.date_time,
+                            filepath=plu.filepath,
+                            data_dir=plu.data_dir,
+                            name=plu.name,
+                            group_number=plu.group_number,
+                            department_number=plu.department_number,
+                            price=plu.price,
+                            tax_number=plu.tax_number
+                            )
             self.session.add(db_plu)
             self.session.commit()
             print(db_plu)
-
 
     def insert_clerks(self):
         clerks = get_clerk_gen()
@@ -204,13 +240,15 @@ class DBInserter():
             if clerk_duplicate:
                 continue
 
-            db_clerk = Clerk(number=clerk.number, date_time=clerk.date_time, filepath=clerk.filepath, data_dir=clerk.data_dir, \
-                name=clerk.name
-                )
+            db_clerk = Clerk(number=clerk.number,
+                             date_time=clerk.date_time,
+                             filepath=clerk.filepath,
+                             data_dir=clerk.data_dir,
+                             name=clerk.name
+                             )
             self.session.add(db_clerk)
             self.session.commit()
             print(db_clerk)
-
 
     def insert_customers(self):
         customers = get_customer_gen()
@@ -220,16 +258,24 @@ class DBInserter():
             if customer_duplicate:
                 continue
 
-            db_customer = Customer(number=customer.number, date_time=customer.date_time, filepath=customer.filepath, \
-                data_dir=customer.data_dir, first_name=customer.first_name, surname=customer.surname, \
-                addr1=customer.addr1, addr2=customer.addr2, addr3=customer.addr3, postcode=customer.postcode, \
-                phone=customer.phone, email=customer.email, overdraft_limit=customer.overdraft_limit, \
-                custgroup_number=customer.custgroup_number
-                )
+            db_customer = Customer(number=customer.number,
+                                   date_time=customer.date_time,
+                                   filepath=customer.filepath,
+                                   data_dir=customer.data_dir,
+                                   first_name=customer.first_name,
+                                   surname=customer.surname,
+                                   addr1=customer.addr1,
+                                   addr2=customer.addr2,
+                                   addr3=customer.addr3,
+                                   postcode=customer.postcode,
+                                   phone=customer.phone,
+                                   email=customer.email,
+                                   overdraft_limit=customer.overdraft_limit,
+                                   custgroup_number=customer.custgroup_number
+                                   )
             self.session.add(db_customer)
             self.session.commit()
             print(db_customer)
-
 
     def customize_orderline_plu(self, order_item, db_orderline):
         """Customize OrderLine object with PLU details (for ItemType = 0)"""
@@ -237,7 +283,6 @@ class DBInserter():
         db_orderline.mix_match_number = self.session.query(PLU).filter_by(number=db_orderline.product_number).first().mix_match
 
         return db_orderline
-
 
     def customize_orderline_freefunc(self, order_item, db_orderline):
         """Customize OrderLine object with FreeFunction details (for ItemType = 1)"""
@@ -256,29 +301,35 @@ class DBInserter():
         db_orderline.product_number_2nd = order_item.item_number
         return db_orderline
 
-
     def customize_orderline_fixedtotal(self, order_item, db_orderline):
         """Customize OrderLine object with FixedTotalizer details (for ItemType = 4)"""
         # db_orderline.fixed_total_number = order_item.item_number
         db_orderline.fixed_total_number = self.session.query(FixedTotalizer.number).filter_by(name=order_item.name).first()
         return db_orderline
 
-
     def insert_order_data(self):
         orders = get_orders_gen()
 
         for order in orders:
-            order_duplicate = self.db_check_duplicate(Order, consecutive_number=order.consecutive_number, date_time=order.date_time)
-            
+            order_duplicate = self.db_check_duplicate(Order,
+                                                      consecutive_number=order.consecutive_number,
+                                                      date_time=order.date_time
+                                                      )
             if order_duplicate:
                 continue
 
-            db_order = Order(date_time=order.date_time, filepath=order.filepath, mode=order.mode, \
-                consecutive_number=order.consecutive_number, terminal_number=order.terminal_number, terminal_name=order.terminal_name, \
-                clerk_number=order.clerk_number, customer_number=order.customer_number, table_number=order.table_number)
+            db_order = Order(date_time=order.date_time,
+                             filepath=order.filepath,
+                             mode=order.mode,
+                             consecutive_number=order.consecutive_number,
+                             terminal_number=order.terminal_number,
+                             terminal_name=order.terminal_name,
+                             clerk_number=order.clerk_number,
+                             customer_number=order.customer_number,
+                             table_number=order.table_number
+                             )
             self.session.add(db_order)
             self.session.commit()
-
             order_items = list(get_order_items_gen(db_order.filepath))
 
             for ol_num, order_item in enumerate(order_items):
@@ -324,38 +375,23 @@ class DBInserter():
                 self.session.add(db_orderline)
                 self.session.commit()
 
-                
-
 
 if __name__ == "__main__":
     session_maker = sessionmaker(db)
-    db_inserter = DBInserter(session_maker)
-    db_inserter.create_all_tables(db)
+    db_insert = DBInsert(session_maker)
+    db_insert.create_all_tables(db)
 
-    # db_inserter.insert_fixed_totalizer()
-    # db_inserter.insert_free_function()
-    # db_inserter.insert_group()
-    # db_inserter.insert_departments()
-    # db_inserter.insert_mixmatch()
-    # db_inserter.insert_taxes()
-    # db_inserter.insert_plu()
-    # db_inserter.insert_plu_2nd()
-    # db_inserter.insert_clerks()
-    # db_inserter.insert_customers()
-    # db_inserter.insert_order_data()
+    db_insert.insert_fixed_totalizer()
+    db_insert.insert_free_function()
+    db_insert.insert_group()
+    db_insert.insert_departments()
+    db_insert.insert_mixmatch()
+    db_insert.insert_taxes()
+    db_insert.insert_plu()
+    db_insert.insert_plu_2nd()
+    db_insert.insert_clerks()
+    db_insert.insert_customers()
+    db_insert.insert_order_data()
 
-    db_inserter.close_session()
+    db_insert.close_session()
 
-    # test relations
-    session = session_maker()
-
-    import datetime
-    end_time = datetime.datetime.strptime("18/12/2017 11:03:23", "%d/%m/%Y %H:%M:%S")
-
-    orderlines = session.query(OrderLine).join(OrderLine.order).filter(Order.date_time<=end_time).all()
-
-    for ol in orderlines:
-        print(ol.order.date_time <= end_time)
-        print(ol)
-
-    session.close()

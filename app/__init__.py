@@ -4,7 +4,6 @@ from flask import Flask
 # from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from logging.handlers import RotatingFileHandler
 from config import Config
 
 
@@ -20,16 +19,5 @@ from app.mod_stats.controllers import mod_stats as statistics_module
 
 # Register blueprints
 app.register_blueprint(statistics_module)
-
-# Set up logging
-if not app.debug:
-    file_handler = RotatingFileHandler('logs/app_info.log', maxBytes=10240,
-                                       backupCount=10)
-    file_handler.setFormatter(logging.Formatter(
-        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))
-    file_handler.setLevel(logging.DEBUG)
-    app.logger.addHandler(file_handler)
-    app.logger.setLevel(logging.DEBUG)
-    app.logger.info('Microblog startup')
 
 from app import routes
