@@ -1,6 +1,7 @@
 import datetime
 from dateutil.relativedelta import relativedelta
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, url_for, redirect, flash
+from flask_login import current_user
 from sqlalchemy.exc import OperationalError
 
 from app.mod_stats.stats_utils import StatsDataExtractor, calc_quarter_timerange
@@ -10,9 +11,21 @@ from app.mod_stats.stats_utils import StatsDataExtractor, calc_quarter_timerange
 mod_stats = Blueprint('stats', __name__, url_prefix='/statistics')
 
 
+@mod_stats.before_request
+def check_authenticated_user():
+    """
+    Restrict access to statistics to not authenticated users
+    """
+    if not current_user.is_authenticated:
+        flash("User is not recognized!")
+        return redirect(url_for("auth.login"))
+
+
 @mod_stats.errorhandler(OperationalError)
 def handle_operational_error(error):
-    """Handles situation when there's no connection with database"""
+    """
+    Handles situation when there's no connection with database
+    """
     return "No connection with database"
 
 
