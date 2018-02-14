@@ -1,5 +1,5 @@
 from flask_login import UserMixin
-from sqlalchemy import Column, String, Integer, Float, DateTime, ForeignKey
+from sqlalchemy import Column, String, Integer, Boolean, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -10,9 +10,10 @@ class User(UserMixin, base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True)
-    username = Column(String(64), index=True)
+    username = Column(String(64), index=True, unique=True)
     email = Column(String(120), index=True, unique=True)
     password_hash = Column(String(128))
+    is_admin = Column(Boolean, default=False)
 
     def __repr__(self):
         return '<User {}>'.format(self.username)

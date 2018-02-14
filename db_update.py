@@ -399,7 +399,17 @@ if __name__ == "__main__":
     session = session_maker()
     base.metadata.create_all(db)
 
-    user = User(username="user1", email="user1@mail.com")
+    user = User(username="admin", email="admin@mail.com", is_admin=True)
+    user.set_password("somepass")
+    print(user)
+    if user.check_password("somepass"):
+        session.add(user)
+        session.commit()
+        print("user added")
+    else:
+        print("hashes don't match")
+
+    user = User(username="user", email="user1@mail.com")
     user.set_password("somepass")
     print(user)
     if user.check_password("somepass"):

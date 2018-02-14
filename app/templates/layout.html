@@ -12,11 +12,25 @@
 {% endblock %}
 
 {% block header %}
-    {% if current_user.is_anonymous %}
-    {#    do nothing for now    #}
-    {% else %}
-    <a href="{{ url_for('auth.logout') }}">Logout</a>
-    {% endif %}
+    <div class="container">
+        <div class="row" id="header">
+            <div id="logo">
+                <h3>WEB-POS online software</h3>
+            </div>
+        </div>
+        <div class="row" id="userinfo-panel">
+            {% if current_user.is_anonymous %}
+            {#    do nothing for now    #}
+            {% else %}
+            <div class="col-lg-3 col-md-3 col-sm-6 col-xs-6">
+                <span id="greeting">Hello, {{ current_user.username }}!</span>
+            </div>
+            <div class="col-lg-1 offset-lg-8 col-md-1 offset-md-8 col-sm-2 offset-sm-4 col-xs-6">
+                <a id="logout-btn" href="{{ url_for('auth.logout') }}">Logout</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
 {% endblock %}
 
 {% block body %}{% endblock %}
