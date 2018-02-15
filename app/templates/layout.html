@@ -24,6 +24,9 @@
             {% else %}
             <div class="col-lg-3 col-md-3 col-sm-6 col-xs-6">
                 <span id="greeting">Hello, {{ current_user.username }}!</span>
+                {% if current_user.is_admin %}
+                    <a href="{{ url_for('admin.show_panel') }}">Go to admin panel</a>
+                {% endif %}
             </div>
             <div class="col-lg-1 offset-lg-8 col-md-1 offset-md-8 col-sm-2 offset-sm-4 col-xs-6">
                 <a id="logout-btn" href="{{ url_for('auth.logout') }}">Logout</a>
