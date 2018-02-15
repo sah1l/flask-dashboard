@@ -1,4 +1,4 @@
-from flask import Blueprint, flash, redirect, url_for, render_template
+from flask import Blueprint, request, flash, redirect, url_for, render_template
 from flask_login import current_user
 
 from app import session_maker
@@ -44,3 +44,34 @@ def add_user():
         flash("Registration completed successfully.")
         return redirect(url_for("admin.add_user"))
     return render_template('admin_panel/create_user.html', form=form)
+
+
+@mod_admin.route("/edit_user/<user_id>", methods=["GET", "POST"])
+def edit_user(user_id):
+    form = RegistrationForm()
+    session = session_maker()
+    user = session.query(User).filter_by(id=user_id).first()
+    if request.method == "GET":
+        session.close()
+        return render_template("admin_panel/edit_user.html", form=form, user=user)
+    else:
+        if form.validate_on_submit():
+            user.username=form.username.data
+            user.email=form.email.data
+            user.set_password(form.password.data)
+            user.is_admin = form.is_admin.data
+            session.add(user)
+            session.commit()
+            session.close()
+            return redirect(url_for("admin.show_panel"))
+        else:
+            return render_template("admin_panel/edit_user.html", form=form, user=user)
+
+
+@mod_admin.route("/delete_user/<user_id>", methods=["GET", "POST"])
+def delete_user(user_id):
+    session = session_maker()
+    session.query(User).filter_by(id=user_id).delete()
+    session.commit()
+    session.close()
+    return redirect(url_for("admin.show_panel"))

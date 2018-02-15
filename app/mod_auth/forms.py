@@ -25,12 +25,4 @@ class RegistrationForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired()])
     password2 = PasswordField('Repeat Password', validators=[DataRequired(), EqualTo('password')])
     is_admin = BooleanField('Is Admin', default=False)
-    submit = SubmitField('Register')
-
-    def validate_email(self, email):
-        session = session_maker()
-        user = session.query(User).filter_by(email=email.data).first()
-        session.close()
-
-        if user is not None:
-            raise ValidationError('This email is already used in the system. Please use another one.')
+    submit = SubmitField('Submit')

@@ -2,19 +2,19 @@
 
 {% block content %}
 <div class="add-user-block col-lg-12">
-    <h4>Add user</h4>
+    <h4>Edit user</h4>
     <form action="" method="post">
         {{ form.hidden_tag() }}
         <p>
             {{ form.username.label }}<br>
-            {{ form.username(size=32) }}<br>
+            {{ form.username(size=32, value=user.username) }}<br>
             {% for error in form.username.errors %}
             <span class="error">{{ error }}</span>
             {% endfor %}
         </p>
         <p>
             {{ form.email.label }}<br>
-            {{ form.email(size=32) }}<br>
+            {{ form.email(size=32, value=user.email) }}<br>
             {% for error in form.email.errors %}
             <span class="error">{{ error }}</span>
             {% endfor %}
