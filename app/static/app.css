@@ -13,3 +13,12 @@
 .fa-check {
     color: green;
 }
+
+.users-table form.icon {
+    display: inline;
+}
+
+.users-table form.icon button {
+    border: none;
+    background: transparent;
+}

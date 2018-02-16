@@ -70,6 +70,7 @@ def edit_user(user_id):
 
 @mod_admin.route("/delete_user/<user_id>", methods=["GET", "POST"])
 def delete_user(user_id):
+    print('still working')
     session = session_maker()
     session.query(User).filter_by(id=user_id).delete()
     session.commit()
