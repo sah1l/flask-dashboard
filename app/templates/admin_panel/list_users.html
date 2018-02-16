@@ -16,13 +16,22 @@
         {% for user in users %}
             <tr>
                 <td>
-                    <a href="{{ url_for('admin.edit_user', user_id=user.id)}}">Edit</a>
-                    <a href="{{ url_for('admin.delete_user', user_id=user.id) }}">Delete</a>
+                    <a href="{{ url_for('admin.edit_user', user_id=user.id)}}">
+                        <i class="fa fa-edit" title="Edit Record"></i>
+                    </a>
+                    <a href="{{ url_for('admin.delete_user', user_id=user.id) }}">
+                        <i class="fa fa-trash" title="Delete Record"></i>
+                    </a>
                 </td>
                 <td>{{ user.id }}</td>
                 <td>{{ user.username }}</td>
                 <td>{{ user.email }}</td>
-                <td>{{ user.is_admin }}</td>
+                <td>{% if user.is_admin == True %}
+                    <i class="fa fa-check"></i>
+                    {% else %}
+                    <i class="fa fa-close"></i>
+                    {% endif %}
+                </td>
             </tr>
         {% endfor %}
     </table>
