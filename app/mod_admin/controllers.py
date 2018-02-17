@@ -37,20 +37,23 @@ def add_user():
     session = session_maker()
     form = UserRegistrationForm()
     orgs = session.query(Organization).all()
-    form.organization.choices = [(org.id, org.name) for org in orgs]
-    if request.method == "GET":
+    empty_choice = [(0, " " * 10)]
+    form.organizations.choices = empty_choice + [(org.id, org.name) for org in orgs]
+    if form.validate_on_submit():
+        orgs = session.query(Organization).filter_by(id=form.organizations.data).all()  # temporary solution, fix this
+        user = User(username=form.username.data,
+                    email=form.email.data,
+                    is_admin=form.is_admin.data,
+                    organizations=orgs
+                    )
+        user.set_password(form.password.data)
+        session.add(user)
+        session.commit()
         session.close()
-        return render_template('admin_panel/create_user.html', form=form)
+        return redirect(url_for("admin.show_panel"))
     else:
-        if form.validate_on_submit():
-            user = User(username=form.username.data, email=form.email.data, is_admin=form.is_admin.data)
-            user.set_password(form.password.data)
-            session.add(user)
-            session.commit()
-            session.close()
-            return redirect(url_for("admin.add_user"))
-        else:
-            return render_template('admin_panel/create_user.html', form=form)
+        print('not valid')
+    return render_template('admin_panel/create_user.html', form=form)
 
 
 @mod_admin.route("/edit_user/<user_id>", methods=["GET", "POST"])
@@ -90,17 +93,17 @@ def add_organization():
     session = session_maker()
     form = OrgCreateForm()
     users = session.query(User).all()
-    form.users.choices = [(user.id, user.email) for user in users]
-    if request.method == "GET":
+    empty_choice = [(0, " " * 10)]
+    form.users.choices = empty_choice + [(user.id, user.email) for user in users]
+    if form.validate_on_submit():
+        users = session.query(User).filter_by(id=form.users.data).all()  # fix this, temporary solution
+        org = Organization(name=form.name.data,
+                           data_dir=form.data_dir.data,
+                           users=users)
+        session.add(org)
+        session.commit()
         session.close()
-        return render_template("admin_panel/create_organization.html", form=form)
+        return redirect(url_for("admin.add_organization"))
     else:
-        if form.validate_on_submit():
-            org = Organization(name=form.name.data,
-                               data_dir=form.data_dir.data,
-                               users=form.user.data)
-            session.add(org)
-            session.commit()
-            session.close()
-        else:
-            return render_template("admin_panel/create_organization.html", form=form)
+        print('errors in add org')
+    return render_template("admin_panel/create_organization.html", form=form)

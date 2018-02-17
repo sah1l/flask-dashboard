@@ -1,8 +1,8 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, BooleanField, SelectField
 from wtforms.validators import DataRequired, Email, EqualTo
+from wtforms.ext.sqlalchemy.fields import QuerySelectField
 
-from app import session_maker
 from app.models import Organization
 
 
@@ -25,7 +25,10 @@ class UserRegistrationForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired()])
     password2 = PasswordField('Repeat Password', validators=[DataRequired(), EqualTo('password')])
     is_admin = BooleanField('Is Admin', default=False)
-    organization = SelectField('Organization')
+    organizations = SelectField('Organization', coerce=int)
+    # organizations = QuerySelectField(query_factory=Organization.objects.all,
+    #                                  get_pk=lambda u: u.id,
+    #                                  get_label=lambda u: u.username)
     submit = SubmitField('Submit')
 
 
@@ -35,4 +38,4 @@ class OrgCreateForm(FlaskForm):
     """
     name = StringField('Organization Name', validators=[DataRequired()])
     data_dir = StringField('Data directory', validators=[DataRequired()])
-    users = SelectField('User')
+    users = SelectField('User', coerce=int)

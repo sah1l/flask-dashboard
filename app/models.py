@@ -7,7 +7,7 @@ from app import base
 """
 Bind users and organizations
 """
-users_orgs_association_table = Table("association", base.metadata,
+users_orgs_association_table = Table("users_orgs_association", base.metadata,
                                      Column("org_id", Integer, ForeignKey("organizations.id")),
                                      Column("user_id", Integer, ForeignKey("users.id")))
 
@@ -17,7 +17,7 @@ class Organization(base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(100))
-    data_dir = Column(String(200))
+    data_dir = Column(String(200), unique=True)
     users = relationship("User",
                          secondary=users_orgs_association_table,
                          back_populates="organizations")

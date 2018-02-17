@@ -22,6 +22,9 @@
         <div class="form-group">
             {{ form.users.label(class="col-lg-2") }}
             <div class="col-lg-5">{{ form.users }}</div>
+            {% for error in form.users.errors %}
+            <span class="error">{{ error }}</span>
+            {% endfor %}
         </div>
         <button class="btn btn-success" type="submit">Add</button>
     </form>
