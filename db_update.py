@@ -379,8 +379,8 @@ class DBInsert:
 
 if __name__ == "__main__":
     session_maker = sessionmaker(db)
-    # db_insert = DBInsert(session_maker)
-    # db_insert.create_all_tables(db)
+    db_insert = DBInsert(session_maker)
+    db_insert.create_all_tables(db)
     #
     # db_insert.insert_fixed_totalizer()
     # db_insert.insert_free_function()
@@ -394,29 +394,28 @@ if __name__ == "__main__":
     # db_insert.insert_customers()
     # db_insert.insert_order_data()
     #
-    # db_insert.close_session()
+    db_insert.close_session()
 
-    session = session_maker()
-    base.metadata.create_all(db)
-
-    user = User(username="admin", email="admin@mail.com", is_admin=True)
-    user.set_password("somepass")
-    print(user)
-    if user.check_password("somepass"):
-        session.add(user)
-        session.commit()
-        print("user added")
-    else:
-        print("hashes don't match")
-
-    user = User(username="user", email="user1@mail.com")
-    user.set_password("somepass")
-    print(user)
-    if user.check_password("somepass"):
-        session.add(user)
-        session.commit()
-        print("user added")
-    else:
-        print("hashes don't match")
+    # session = session_maker()
+    #
+    # user = User(username="admin", email="admin@mail.com", is_admin=True)
+    # user.set_password("somepass")
+    # print(user)
+    # if user.check_password("somepass"):
+    #     session.add(user)
+    #     session.commit()
+    #     print("user added")
+    # else:
+    #     print("hashes don't match")
+    #
+    # user = User(username="user", email="user1@mail.com")
+    # user.set_password("somepass")
+    # print(user)
+    # if user.check_password("somepass"):
+    #     session.add(user)
+    #     session.commit()
+    #     print("user added")
+    # else:
+    #     print("hashes don't match")
 
 

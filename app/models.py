@@ -1,7 +1,26 @@
-from sqlalchemy import Column, String, Integer, Float, DateTime, ForeignKey
+from sqlalchemy import Table, Column, String, Integer, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 
 from app import base
+
+
+"""
+Bind users and organizations
+"""
+users_orgs_association_table = Table("association", base.metadata,
+                                     Column("org_id", Integer, ForeignKey("organizations.id")),
+                                     Column("user_id", Integer, ForeignKey("users.id")))
+
+
+class Organization(base):
+    __tablename__ = "organizations"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100))
+    data_dir = Column(String(200))
+    users = relationship("User",
+                         secondary=users_orgs_association_table,
+                         back_populates="organizations")
 
 
 class Master(base): 

@@ -3,7 +3,7 @@ from flask_login import current_user, login_user, logout_user
 
 from app import session_maker
 from app.mod_auth.models import User
-from app.mod_auth.forms import LoginForm, RegistrationForm
+from app.mod_auth.forms import LoginForm, UserRegistrationForm
 
 
 # define Blueprint for auth module
@@ -57,14 +57,13 @@ def register():
     if current_user.is_authenticated:
         return redirect(url_for('stats.show_today'))
 
-    form = RegistrationForm()
+    form = UserRegistrationForm()
     if form.validate_on_submit():
         session = session_maker()
-        user = User(username=form.username.data, email=form.email.data)
+        user = User(username=form.username.data, email=form.email.data, is_admin=form.is_admin.data)
         user.set_password(form.password.data)
         session.add(user)
         session.commit()
         session.close()
-        flash("Registration completed successfully.")
         return redirect(url_for('auth.login'))
     return render_template('auth/register.html', title='Register', form=form)

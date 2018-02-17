@@ -2,8 +2,9 @@ from flask import Blueprint, request, flash, redirect, url_for, render_template
 from flask_login import current_user
 
 from app import session_maker
+from app.models import Organization
 from app.mod_auth.models import User
-from app.mod_auth.forms import RegistrationForm
+from app.mod_auth.forms import UserRegistrationForm, OrgCreateForm
 
 # define Blueprint for admin module
 mod_admin = Blueprint('admin', __name__, url_prefix='/admin_panel')
@@ -33,22 +34,28 @@ def show_panel():
 
 @mod_admin.route("/add_user", methods=["GET", "POST"])
 def add_user():
-    form = RegistrationForm()
-    if form.validate_on_submit():
-        session = session_maker()
-        user = User(username=form.username.data, email=form.email.data, is_admin=form.is_admin.data)
-        user.set_password(form.password.data)
-        session.add(user)
-        session.commit()
+    session = session_maker()
+    form = UserRegistrationForm()
+    orgs = session.query(Organization).all()
+    form.organization.choices = [(org.id, org.name) for org in orgs]
+    if request.method == "GET":
         session.close()
-        flash("Registration completed successfully.")
-        return redirect(url_for("admin.add_user"))
-    return render_template('admin_panel/create_user.html', form=form)
+        return render_template('admin_panel/create_user.html', form=form)
+    else:
+        if form.validate_on_submit():
+            user = User(username=form.username.data, email=form.email.data, is_admin=form.is_admin.data)
+            user.set_password(form.password.data)
+            session.add(user)
+            session.commit()
+            session.close()
+            return redirect(url_for("admin.add_user"))
+        else:
+            return render_template('admin_panel/create_user.html', form=form)
 
 
 @mod_admin.route("/edit_user/<user_id>", methods=["GET", "POST"])
 def edit_user(user_id):
-    form = RegistrationForm()
+    form = UserRegistrationForm()
     session = session_maker()
     user = session.query(User).filter_by(id=user_id).first()
     if request.method == "GET":
@@ -60,6 +67,7 @@ def edit_user(user_id):
             user.email=form.email.data
             user.set_password(form.password.data)
             user.is_admin = form.is_admin.data
+            user.organization = form.organization.data
             session.add(user)
             session.commit()
             session.close()
@@ -70,9 +78,29 @@ def edit_user(user_id):
 
 @mod_admin.route("/delete_user/<user_id>", methods=["GET", "POST"])
 def delete_user(user_id):
-    print('still working')
     session = session_maker()
     session.query(User).filter_by(id=user_id).delete()
     session.commit()
     session.close()
     return redirect(url_for("admin.show_panel"))
+
+
+@mod_admin.route("/add_organization", methods=["GET", "POST"])
+def add_organization():
+    session = session_maker()
+    form = OrgCreateForm()
+    users = session.query(User).all()
+    form.users.choices = [(user.id, user.email) for user in users]
+    if request.method == "GET":
+        session.close()
+        return render_template("admin_panel/create_organization.html", form=form)
+    else:
+        if form.validate_on_submit():
+            org = Organization(name=form.name.data,
+                               data_dir=form.data_dir.data,
+                               users=form.user.data)
+            session.add(org)
+            session.commit()
+            session.close()
+        else:
+            return render_template("admin_panel/create_organization.html", form=form)

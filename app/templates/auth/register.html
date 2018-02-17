@@ -5,38 +5,42 @@
         <div class="row">
             <div class="auth-block col-lg-6 offset-lg-3 col-md-6 offset-md-3 col-sm-10 offset-md-1 col-xs-12"
                  id="register-block">
-                <h1>Register</h1>
-                <form action="" method="post">
+                <h1>Register new user</h1>
+                <form action="" method="post" class="form-horizontal" role="form">
                     {{ form.hidden_tag() }}
-                    <p>
-                        {{ form.username.label }}<br>
-                        {{ form.username(size=32) }}<br>
+                    <div class="form-group">
+                        {{ form.username.label(class="col-lg-2") }}
+                        <div class="col-lg-5">{{ form.username(size=32, class="form-control") }}</div>
                         {% for error in form.username.errors %}
-                        <span>{{ error }}</span>
+                            <span class="error">{{ error }}</span>
                         {% endfor %}
-                    </p>
-                    <p>
-                        {{ form.email.label }}<br>
-                        {{ form.email(size=32) }}<br>
+                    </div>
+                    <div class="form-group">
+                        {{ form.email.label(class="col-lg-2") }}
+                        <div class="col-lg-5">{{ form.email(size=32, class="form-control") }}</div>
                         {% for error in form.email.errors %}
-                        <span>{{ error }}</span>
+                            <span class="error">{{ error }}</span>
                         {% endfor %}
-                    </p>
-                    <p>
-                        {{ form.password.label }}<br>
-                        {{ form.password(size=32) }}<br>
+                    </div>
+                    <div class="form-group">
+                        {{ form.password.label(class="col-lg-2") }}
+                        <div class="col-lg-5">{{ form.password(size=32, class="form-control") }}</div>
                         {% for error in form.password.errors %}
-                        <span>{{ error }}</span>
+                            <span class="error">{{ error }}</span>
                         {% endfor %}
-                    </p>
-                    <p>
-                        {{ form.password2.label }}<br>
-                        {{ form.password2(size=32) }}<br>
+                    </div>
+                    <div class="form-group">
+                        {{ form.password2.label(class="col-lg-2") }}
+                        <div class="col-lg-5">{{ form.password2(size=32, class="form-control") }}</div>
                         {% for error in form.password2.errors %}
-                        <span>{{ error }}</span>
+                            <span class="error">{{ error }}</span>
                         {% endfor %}
-                    </p>
-                    <p>{{ form.submit() }}</p>
+                    </div>
+                    <div class="form-group">
+                        {{ form.is_admin.label(class="col-lg-2") }}
+                        <div class="col-lg-5" id="is_admin">{{ form.is_admin() }}</div>
+                    </div>
+                    <button class="btn btn-success" type="submit">Add</button>
                 </form>
             </div>
         </div>
