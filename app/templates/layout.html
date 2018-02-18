@@ -11,32 +11,47 @@
 <script type=text/javascript src={{ url_for('static', filename='app.js') }}></script>
 {% endblock %}
 
-{% block header %}
-    <div class="container">
-        <div class="row" id="header">
-            <div id="logo">
-                <h3>WEB-POS online software</h3>
-            </div>
+<div id="header-row">
+    <div id="logo">
+        <h2>WEB-POS online software</h2>
+    </div>
+</div>
+<div id="user-panel-row">
+    {% if current_user.is_anonymous %}
+    {#    do nothing for now    #}
+    {% else %}
+        <span id="greeting">Hello, <b>{{ current_user.email }}</b>!</span>
+    <span id="logout">
+        <a class="btn" role="button" href="{{ url_for('auth.logout') }}">Logout</a>
+    </span>
+    {% endif %}
+</div>
+
+<div class="container custom-container" id="main">
+    <div class="row">
+        <div class="col-lg-2 col-md-2" id="left-navigation">
+            <nav class="navbar navbar-expand-lg navbar-light bg-light" id="main-nav">
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#left-navbar-content"
+                    aria-controls="left-navbar-content" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse" id="left-navbar-content">
+                    <ul class="nav navbar-nav" id="main-navigation">
+                        {% if current_user.is_admin %}
+                            <li class="nav-item"><a class="nav-link" id="admin-nav-item" href="{{ url_for("admin.show_panel") }}">Admin Panel</a></li>
+                        {% endif %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for("stats.show_today") }}">Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link" href="">Profile Settings</a></li>
+                        <li class="nav-item"><a class="nav-link" href="">Error logs</a></li>
+                    </ul>
+                </div>
+            </nav>
         </div>
-        <div class="row" id="userinfo-panel">
-            {% if current_user.is_anonymous %}
-            {#    do nothing for now    #}
-            {% else %}
-            <div class="col-lg-3 col-md-3 col-sm-6 col-xs-6">
-                <span id="greeting">Hello, {{ current_user.username }}!</span>
-                {% if current_user.is_admin %}
-                    <a href="{{ url_for('admin.show_panel') }}">Go to admin panel</a>
-                {% endif %}
-            </div>
-            <div class="col-lg-1 offset-lg-8 col-md-1 offset-md-8 col-sm-2 offset-sm-4 col-xs-6">
-                <a id="logout-btn" href="{{ url_for('auth.logout') }}">Logout</a>
-            </div>
-            {% endif %}
+        <div class="col-lg-10" id="main-block">
+        {% block body %}{% endblock %}
         </div>
     </div>
-{% endblock %}
-
-{% block body %}{% endblock %}
+</div>
 
 {% block footer %}{% endblock %}
 </html>

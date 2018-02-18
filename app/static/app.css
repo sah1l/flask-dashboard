@@ -1,3 +1,38 @@
+#header-row {
+    background-color: #2E2E2E;
+    height: 100px;
+    text-align:center;
+}
+
+#header-row #logo {
+    margin-top: auto;
+    color: white;
+}
+
+#user-panel-row {
+    background-color: #212121;
+    height: 40px;
+    color: white;
+}
+
+#greeting {
+    float: left;
+    margin-top: 7px;
+    margin-left: 10px;
+}
+
+.custom-container {
+    display: inline-block;
+}
+
+#logout {
+    float: right;
+}
+
+#main-nav li {
+    height: 100px;
+}
+
 .error {
     color: red;
 }
