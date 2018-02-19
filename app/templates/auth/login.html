@@ -1,32 +1,26 @@
 {% extends "layout.html" %}
 
-{% block body %}
-    <div class="container">
-        <div class="row">
-            <div class="auth-block col-lg-6 offset-lg-3 col-md-6 offset-md-3 col-sm-10 offset-md-1 col-xs-12"
-                 id="register-block">
-                <h1>Log In</h1>
-                <form action="" method="post">
-                    {{ form.hidden_tag() }}
-                    <p>
-                        {{ form.username.label }}<br>
-                        {{ form.username(size=32) }}<br>
-                        {% for error in form.username.errors %}
-                        <span class="error">[{{ error }}]</span>
-                        {% endfor %}
-                    </p>
-                    <p>
-                        {{ form.password.label }}<br>
-                        {{ form.password(size=32) }}<br>
-                        {% for error in form.password.errors %}
-                        <span class="error">[{{ error }}]</span>
-                        {% endfor %}
-                    </p>
-                    <p>{{ form.remember_me() }} {{ form.remember_me.label }}</p>
-                    <p>{{ form.submit() }}</p>
-                </form>
-                <p>New User? <a href="{{ url_for("auth.register") }}">Click to Register!</a></p>
+{% block login_block %}
+    <div class="col-lg-4 offset-lg-4 col-sm-6 offset-sm-3 col-xs-12" id="login-block">
+        <h3>Log In</h3>
+        <form action="" method="post" class="form-horizontal" role="form" id="login-form">
+            {{ form.hidden_tag() }}
+            <div class="form-group col-lg-10">
+                {{ form.email.label }}
+                <div>{{ form.email(size=32, class="form-control") }}</div>
+                {% for error in form.email.errors %}
+                <span class="error">{{ error }}</span>
+                {% endfor %}
             </div>
-        </div>
+            <div class="form-group col-lg-10">
+                {{ form.password.label }}
+                <div>{{ form.password(size=32, class="form-control") }}</div>
+                {% for error in form.password.errors %}
+                <span class="error">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <p>{{ form.remember_me() }} {{ form.remember_me.label }}</p>
+            <p>{{ form.submit(class="btn") }}</p>
+        </form>
     </div>
 {% endblock %}

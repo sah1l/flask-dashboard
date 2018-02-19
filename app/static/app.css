@@ -1,16 +1,16 @@
+/* Header */
+
 #header-row {
     background-color: #2E2E2E;
     height: 100px;
-    text-align:center;
 }
 
 #header-row #logo {
-    margin-top: auto;
     color: white;
 }
 
 #user-panel-row {
-    background-color: #212121;
+    background-color: #4f4f4f;
     height: 40px;
     color: white;
 }
@@ -21,21 +21,50 @@
     margin-left: 10px;
 }
 
-.custom-container {
-    display: inline-block;
-}
-
 #logout {
     float: right;
 }
+
+/* Login page */
+
+#login-block {
+    padding-top: 20px;
+}
+
+/* Content */
+
+.custom-container {
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 0;
+    padding-right: 0;
+    max-width: 98%;
+}
+
+.page-content {
+    padding-top: 20px;
+}
+
+/* Side navigation */
 
 #main-nav li {
     height: 100px;
 }
 
+/* Login/register/create records forms errors */
+
 .error {
     color: red;
+    padding-left: 15px;
 }
+
+/* Admin panel page */
+
+#admin-breadcrumbs {
+    margin-bottom: 20px;
+}
+
+/* Admin panel tables */
 
 .fa {
     color: black;
@@ -49,11 +78,40 @@
     color: green;
 }
 
-.users-table form.icon {
+.list-table form.icon {
     display: inline;
 }
 
-.users-table form.icon button {
+.list-table form.icon button {
     border: none;
     background: transparent;
+}
+
+/* Admin create and edit forms */
+.add-record-block h4 {
+    padding-left: 15px;
+}
+
+.submit-panel {
+    padding-left: 15px;
+}
+
+/* Dashboard */
+
+#time-slice-navigation {
+    padding-left: 0;
+}
+
+/* Footer */
+
+#footer-row {
+    background-color: #cccccc;
+    height: 200px;
+    margin-top: 120px;
+}
+
+.footer-block {
+    color: #676767;
+    margin-left: 50px;
+    padding-top: 20px;
 }

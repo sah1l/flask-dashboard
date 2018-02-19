@@ -1,9 +1,12 @@
-import xml.etree.ElementTree as ET
+import os
 
 from datetime import datetime
 
 from app.mod_db_manage.utils import parse_xml, get_xml_records, get_order_xml, get_mf_dir, get_mf_xml, check_tag_length
-from app.mod_db_manage.config import DATA_DIR, SCRIPT_DIR, GROUP_DIRS
+from app.mod_db_manage.config import DATA_DIR, SCRIPT_DIR
+
+
+GROUP_DIRS = []
 
 
 def get_orders_gen():
@@ -24,14 +27,16 @@ def get_order_items_gen(order_file):
         yield ItemData(item)
 
 
-def get_fixed_total_gen():
+def get_fixed_total_gen(org_directory):
     """Get Fixed Totaliser data"""
-    for group_dir in GROUP_DIRS:
+    group_dirs = os.listdir(os.path.join(SCRIPT_DIR,os.path.join(DATA_DIR, org_directory)))
+    print(group_dirs)
+    for group_dir in group_dirs:
         mf_dir = get_mf_dir(SCRIPT_DIR + DATA_DIR, group_dir)
         mf_xml_files = get_mf_xml(mf_dir)
 
         for mf_file in mf_xml_files:
-            data = parse_xml(mf_dir + mf_file)
+            data = parse_xml(os.path.join(mf_dir,mf_file))
             name_tag = data.find("Name").text
 
             # fixed totaliser
@@ -39,7 +44,7 @@ def get_fixed_total_gen():
                 records = get_xml_records(data)
 
                 for record in records:
-                    path = mf_dir + mf_file
+                    path = os.path.join(mf_dir, mf_file)
                     yield FixedTotalizerData(data, path, record)
 
             else:

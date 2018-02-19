@@ -1,5 +1,6 @@
 from sqlalchemy import Table, Column, String, Integer, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
+from sqlalchemy.ext.declarative import declared_attr
 
 from app import base
 
@@ -16,14 +17,13 @@ class Organization(base):
     __tablename__ = "organizations"
 
     id = Column(Integer, primary_key=True)
-    name = Column(String(100))
-    data_dir = Column(String(200), unique=True)
+    name = Column(String(100), unique=True, index=True)
+    data_dir = Column(String(200), unique=True, index=True)
     users = relationship("User",
                          secondary=users_orgs_association_table,
                          back_populates="organizations")
 
-
-class Master(base): 
+class Master(base):
     """Base class for Master files data"""
     __abstract__ = True
 
@@ -32,6 +32,10 @@ class Master(base):
     date_time = Column(DateTime, nullable=False)
     filepath = Column(String(100), nullable=False)
     data_dir = Column(String(100), nullable=False)
+
+    @declared_attr
+    def get_org_id(cls):
+        return Column(Integer, ForeignKey("organizations.id"))
 
 
 class FixedTotalizer(Master):
@@ -200,6 +204,7 @@ class Order(base):
     id = Column(Integer, primary_key=True)
     date_time = Column(DateTime)
     filepath = Column(String(100))
+    org_id = Column(Integer, ForeignKey("organizations.id"))
     mode = Column(String(50))
     consecutive_number = Column(Integer)
     terminal_number = Column(Integer)

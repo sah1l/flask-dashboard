@@ -12,46 +12,54 @@
 {% endblock %}
 
 <div id="header-row">
-    <div id="logo">
-        <h2>WEB-POS online software</h2>
-    </div>
+    <h2 id="logo">WEB-POS online software</h2>
 </div>
+
+{% if current_user.is_authenticated %}
 <div id="user-panel-row">
-    {% if current_user.is_anonymous %}
-    {#    do nothing for now    #}
-    {% else %}
         <span id="greeting">Hello, <b>{{ current_user.email }}</b>!</span>
     <span id="logout">
         <a class="btn" role="button" href="{{ url_for('auth.logout') }}">Logout</a>
     </span>
-    {% endif %}
+
 </div>
+{% endif %}
 
 <div class="container custom-container" id="main">
     <div class="row">
-        <div class="col-lg-2 col-md-2" id="left-navigation">
-            <nav class="navbar navbar-expand-lg navbar-light bg-light" id="main-nav">
-                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#left-navbar-content"
-                    aria-controls="left-navbar-content" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse" id="left-navbar-content">
-                    <ul class="nav navbar-nav" id="main-navigation">
-                        {% if current_user.is_admin %}
-                            <li class="nav-item"><a class="nav-link" id="admin-nav-item" href="{{ url_for("admin.show_panel") }}">Admin Panel</a></li>
-                        {% endif %}
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for("stats.show_today") }}">Dashboard</a></li>
-                        <li class="nav-item"><a class="nav-link" href="">Profile Settings</a></li>
-                        <li class="nav-item"><a class="nav-link" href="">Error logs</a></li>
-                    </ul>
-                </div>
-            </nav>
-        </div>
-        <div class="col-lg-10" id="main-block">
-        {% block body %}{% endblock %}
-        </div>
+
+        {% if current_user.is_authenticated %}
+            <div class="col-lg-2 col-md-2" id="left-navigation">
+                <nav class="navbar navbar-expand-lg navbar-light bg-light" id="main-nav">
+                    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#left-navbar-content"
+                        aria-controls="left-navbar-content" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="navbar-collapse collapse" id="left-navbar-content">
+                        <ul class="nav navbar-nav" id="main-navigation">
+                            {% if current_user.is_admin %}
+                                <li class="nav-item"><a class="nav-link" id="admin-nav-item" href="{{ url_for("admin.show_panel") }}">Admin Panel</a></li>
+                            {% endif %}
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for("stats.show_today") }}">Dashboard</a></li>
+                            <li class="nav-item"><a class="nav-link" href="">Profile Settings</a></li>
+                            <li class="nav-item"><a class="nav-link" href="">Error logs</a></li>
+                        </ul>
+                    </div>
+                </nav>
+            </div>
+            <div class="col-lg-10" id="main-block">
+            {% block body %}{% endblock %}
+            </div>
+        {% else %}
+            {% block login_block %}{% endblock %}
+        {% endif %}
     </div>
 </div>
 
-{% block footer %}{% endblock %}
+<div id="footer-row">
+    <div class="footer-block">
+        <span>&copy; Copyright WEB-POS 2018</span>
+    </div>
+</div>
+
 </html>

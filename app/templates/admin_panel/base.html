@@ -11,10 +11,11 @@
 {% endwith %}
 
 {% block body %}
-    <div class="row">
-        <div class="col-lg-12">
+    <div class="page-content">
+        <div class="col-lg-12" id="admin-breadcrumbs">
             <a href="{{ url_for('admin.show_panel') }}">List users</a> |
             <a href="{{ url_for('admin.add_user') }}">Add user</a> |
+            <a href="{{ url_for('admin.list_organizations') }}">List organizations</a> |
             <a href="{{ url_for('admin.add_organization') }}">Add organization</a>
         </div>
         {% block content %}{% endblock %}

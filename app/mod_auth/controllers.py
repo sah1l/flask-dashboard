@@ -22,13 +22,13 @@ def login():
 
     form = LoginForm()
     if form.validate_on_submit():
+        # additional validation on uniqueness subject
         session = session_maker()
-        user = session.query(User).filter_by(username=form.username.data).first()
+        user = session.query(User).filter_by(email=form.email.data).first()
         session.close()
-
         if user is None or not user.check_password(form.password.data):
-            flash('Invalid username or password')
-            return redirect(url_for('auth.login'))
+            form.password.errors.append("Email or password are incorrect.")
+            return render_template('auth/login.html', title='Sign In', form=form)
 
         login_user(user, remember=form.remember_me.data)
         return redirect(url_for('stats.show_today'))

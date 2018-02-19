@@ -1,7 +1,7 @@
 {% extends "admin_panel/base.html" %}
 
 {% block content %}
-<div class="add-org-block col-lg-12">
+<div class="add-record-block col-lg-12">
     <h4>Add organization</h4>
     <form action="" method="post" class="form-horizontal" role="form">
         {{ form.hidden_tag() }}
@@ -26,7 +26,10 @@
             <span class="error">{{ error }}</span>
             {% endfor %}
         </div>
-        <button class="btn btn-success" type="submit">Add</button>
+        <div class="submit-panel">
+            {{ form.submit(class="btn btn-success") }}
+            <a class="btn btn-danger" href="{{ url_for("admin.list_organizations") }}">Cancel</a>
+        </div>
     </form>
 </div>
 {% endblock %}

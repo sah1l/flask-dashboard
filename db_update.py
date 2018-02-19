@@ -1,17 +1,17 @@
 """
 Connects to database and adds new data from XML files
 """
+import os
 
 from sqlalchemy.orm import sessionmaker
 
 from app import db, base
 from app.models import FixedTotalizer, FreeFunction, Department, Group, PLU, Clerk, Customer, \
-                        MixMatch, Order, OrderLine, PLU2nd, Tax
-from app.mod_auth.models import User
+                        MixMatch, Order, OrderLine, PLU2nd, Tax, Organization
 from app.mod_db_manage.xml_parser import get_orders_gen, get_order_items_gen, get_fixed_total_gen, get_free_func_gen, \
                         get_department_gen, get_group_gen, get_plu_gen, get_clerk_gen, get_customer_gen, \
                         get_mixmatch_gen, get_plu2nd_gen, get_tax_gen
-
+from app.mod_db_manage.config import DATA_DIR, SCRIPT_DIR
 
 MAGIC_INDRAWER_NUMBER = 3  # a number to calculate in-drawer records
 
@@ -20,8 +20,10 @@ class DBInsert:
     """
     Inserts new data from XML files to database
     """
-    def __init__(self, _session_maker):
+    def __init__(self, _session_maker, _org_dir, _org_id):
         self.session = _session_maker()
+        self.org_dir = _org_dir
+        self.org_id = _org_id
 
     def create_all_tables(self, _db):
         base.metadata.create_all(_db)
@@ -41,7 +43,7 @@ class DBInsert:
         self.session.close()
 
     def insert_fixed_totalizer(self):
-        fixed_totalizers = get_fixed_total_gen()
+        fixed_totalizers = get_fixed_total_gen(self.org_dir)
 
         for ft in fixed_totalizers:
             ft_duplicate = self.db_check_duplicate(FixedTotalizer, number=ft.number)
@@ -52,6 +54,7 @@ class DBInsert:
                                    date_time=ft.date_time,
                                    filepath=ft.filepath,
                                    data_dir=ft.data_dir,
+                                   org_id=self._org_id,
                                    name=ft.name
                                    )
             self.session.add(db_ft)
@@ -379,43 +382,29 @@ class DBInsert:
 
 if __name__ == "__main__":
     session_maker = sessionmaker(db)
-    db_insert = DBInsert(session_maker)
-    db_insert.create_all_tables(db)
-    #
-    # db_insert.insert_fixed_totalizer()
-    # db_insert.insert_free_function()
-    # db_insert.insert_group()
-    # db_insert.insert_departments()
-    # db_insert.insert_mixmatch()
-    # db_insert.insert_taxes()
-    # db_insert.insert_plu()
-    # db_insert.insert_plu_2nd()
-    # db_insert.insert_clerks()
-    # db_insert.insert_customers()
-    # db_insert.insert_order_data()
-    #
-    db_insert.close_session()
-
-    # session = session_maker()
-    #
-    # user = User(username="admin", email="admin@mail.com", is_admin=True)
-    # user.set_password("somepass")
-    # print(user)
-    # if user.check_password("somepass"):
-    #     session.add(user)
-    #     session.commit()
-    #     print("user added")
-    # else:
-    #     print("hashes don't match")
-    #
-    # user = User(username="user", email="user1@mail.com")
-    # user.set_password("somepass")
-    # print(user)
-    # if user.check_password("somepass"):
-    #     session.add(user)
-    #     session.commit()
-    #     print("user added")
-    # else:
-    #     print("hashes don't match")
 
 
+    org_dirs = os.listdir(SCRIPT_DIR + DATA_DIR)
+    for org_dir in org_dirs:
+        print(org_dir)
+        session = session_maker()
+        org_id = session.query(Organization.id).filter_by(data_dir=org_dir).first()
+        if not org_id:
+            print('org with dir {} was not found'.format(org_dir))
+
+        db_insert = DBInsert(session_maker, org_dir, org_id)
+        db_insert.create_all_tables(db)
+
+        db_insert.insert_fixed_totalizer()
+        # db_insert.insert_free_function()
+        # db_insert.insert_group()
+        # db_insert.insert_departments()
+        # db_insert.insert_mixmatch()
+        # db_insert.insert_taxes()
+        # db_insert.insert_plu()
+        # db_insert.insert_plu_2nd()
+        # db_insert.insert_clerks()
+        # db_insert.insert_customers()
+        # db_insert.insert_order_data()
+
+        db_insert.close_session()

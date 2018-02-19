@@ -40,6 +40,12 @@ def add_user():
     empty_choice = [(0, " " * 10)]
     form.organizations.choices = empty_choice + [(org.id, org.name) for org in orgs]
     if form.validate_on_submit():
+        # additional validation on uniqueness subject
+        user = session.query(User).filter_by(email=form.email.data).first()
+        if user:
+            form.email.errors.append("There'is already a user with this email. Please, choose another one.")
+            return render_template("admin_panel/create_user.html", form=form)
+
         orgs = session.query(Organization).filter_by(id=form.organizations.data).all()  # temporary solution, fix this
         user = User(username=form.username.data,
                     email=form.email.data,
@@ -88,6 +94,14 @@ def delete_user(user_id):
     return redirect(url_for("admin.show_panel"))
 
 
+@mod_admin.route("/list_organizations", methods=["GET"])
+def list_organizations():
+    session = session_maker()
+    orgs = session.query(Organization).all()
+    session.close()
+    return render_template("admin_panel/list_organizations.html", orgs=orgs)
+
+
 @mod_admin.route("/add_organization", methods=["GET", "POST"])
 def add_organization():
     session = session_maker()
@@ -107,3 +121,13 @@ def add_organization():
     else:
         print('errors in add org')
     return render_template("admin_panel/create_organization.html", form=form)
+
+
+@mod_admin.route("/edit_organization/<org_id>", methods=["GET", "POST"])
+def edit_organization(org_id):
+    pass
+
+
+@mod_admin.route("/delete_organization/<org_id>", methods=["GET", "POST"])
+def delete_organization(org_id):
+    pass
