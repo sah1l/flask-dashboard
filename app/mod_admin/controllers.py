@@ -130,4 +130,8 @@ def edit_organization(org_id):
 
 @mod_admin.route("/delete_organization/<org_id>", methods=["GET", "POST"])
 def delete_organization(org_id):
-    pass
+    session = session_maker()
+    session.query(Organization).filter_by(id=org_id).delete()
+    session.commit()
+    session.close()
+    return redirect(url_for("admin.list_organizations"))

@@ -152,13 +152,14 @@ class StatsDataExtractor():
     Extracts statistics data from database.
     Handles time frames.
     """
-    def __init__(self, start_time, end_time):
+    def __init__(self, org_id, start_time, end_time):
         session_maker = sessionmaker(db)
         self.session = session_maker()
         self.start_time = start_time
         self.end_time = end_time
         self.orderlines = self.session.query(OrderLine).join(OrderLine.order).filter(
             and_(
+                Order.org_id==org_id,
                 Order.date_time>=self.start_time, 
                 Order.date_time<=self.end_time
                 )
@@ -180,15 +181,15 @@ class StatsDataExtractor():
             qty = ol.qty
             # encounter PLU and PLU2nd
             if ol.item_type == PLU_ITEM_TYPE:
-                dep_number = ol.plu.department_number
+                dep_id = ol.plu.department_id
                 dep_name = ol.plu.department.name
             elif ol.item_type == PLU2ND_ITEM_TYPE:
-                dep_number = ol.plu_2nd.department_number
+                dep_id = ol.plu_2nd.department_id
                 dep_name = ol.plu_2nd.department_name
             else:
                 continue
             
-            _dict = dict_write_values(_dict, dep_number, dep_name, price, qty)
+            _dict = dict_write_values(_dict, dep_id, dep_name, price, qty)
         
         return _dict
 
@@ -199,8 +200,9 @@ class StatsDataExtractor():
         _dict = gross_net_fill_values(_dict)
 
         for ol in self.orderlines:
-            if ol.free_func_number == 149:  # ATTENTION!!! FIX!!! skip statistics for HOLD items
-                continue
+            if ol.free_function:  # ATTENTION!!! FIX!!! skip statistics for HOLD items
+                if ol.free_function.name == 'HOLD':
+                    continue
             
             qty = ol.qty
             price = ol.value
@@ -224,7 +226,7 @@ class StatsDataExtractor():
             # there are such free functions as '3 for 2' (Group 3/Order2)
             # that have 1 item type and None free func, also with negative value
             # this value spoils results so check for None there
-            elif ol.item_type == FREE_FUNC_ITEM_TYPE and ol.free_func_number is not None:
+            elif ol.item_type == FREE_FUNC_ITEM_TYPE and ol.free_func_id is not None:
                 ft_name = ol.fixed_totalizer.name
                 _dict = dict_write_values(_dict, ft_name, ft_name, price, qty)
 
@@ -245,15 +247,15 @@ class StatsDataExtractor():
             price = ol.value
             # encounter PLU and PLU2nd
             if ol.item_type == PLU_ITEM_TYPE:
-                product_number = ol.product_number
+                product_id = ol.product_id
                 product_name = ol.product.name
             elif ol.item_type == PLU2ND_ITEM_TYPE:
-                product_number = ol.product_number_2nd
+                product_id = ol.product_id_2nd
                 product_name = ol.product_2nd.name
             else:
                 continue
 
-            _dict = dict_write_values(_dict, product_number, product_name, price, qty)
+            _dict = dict_write_values(_dict, product_id, product_name, price, qty)
 
         return _dict
 
@@ -296,10 +298,10 @@ class StatsDataExtractor():
 
         for ol in self.orderlines:
             clerk_name = ol.order.clerk.name
-            clerk_number = ol.order.clerk_number
+            clerk_id = ol.order.clerk_id
             price = ol.value
             qty = ol.qty
-            _dict = dict_write_values(_dict, clerk_number, clerk_name, price, qty)
+            _dict = dict_write_values(_dict, clerk_id, clerk_name, price, qty)
 
         return _dict
 
@@ -315,15 +317,15 @@ class StatsDataExtractor():
             price = ol.value
             # encounter PLU and PLU2nd
             if ol.item_type == PLU_ITEM_TYPE:
-                group_number = ol.plu.group_number
+                group_id = ol.plu.group_id
                 group_name = ol.plu.group.name
             elif ol.item_type == PLU2ND_ITEM_TYPE:
-                group_number = ol.plu_2nd.group_number
+                group_id = ol.plu_2nd.group_id
                 group_name = ol.plu_2nd.group_name
             else:
                 continue
 
-            _dict = dict_write_values(_dict, group_number, group_name, price, qty)
+            _dict = dict_write_values(_dict, group_id, group_name, price, qty)
 
         return _dict
 
@@ -335,8 +337,8 @@ class StatsDataExtractor():
         _dict = {}
 
         for ol in self.orderlines:
-            ff_number = ol.free_func_number
-            if ff_number is None:
+            ff_id = ol.free_func_id
+            if ff_id is None:
                 continue 
 
             ff_name = ol.free_function.name
@@ -350,6 +352,6 @@ class StatsDataExtractor():
                 qty = abs(qty)
                 price = abs(price)
 
-            _dict = dict_write_values(_dict, ff_number, ff_name, price, qty)
+            _dict = dict_write_values(_dict, ff_id, ff_name, price, qty)
 
         return _dict

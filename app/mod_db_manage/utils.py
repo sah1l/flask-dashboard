@@ -21,10 +21,11 @@ def get_xml_records(data):
     return records
 
 
-def get_order_xml(group_dirs):
+def get_order_xml(org_path):
     """Get xml with orders data"""
-    for group_dir in group_dirs:
-        orders_xml_dir = SCRIPT_DIR + DATA_DIR + group_dir
+    group_dirs_names = os.listdir(org_path)
+    for group_dir_name in group_dirs_names:
+        orders_xml_dir = os.path.join(org_path, group_dir_name)
         orders_xml = os.listdir(orders_xml_dir)
         
         for of in orders_xml:
@@ -32,14 +33,13 @@ def get_order_xml(group_dirs):
                 yield orders_xml_dir + "/" + of
 
 
-def get_mf_dir(data_dir, group_dir):
+def get_mf_dir(org_path, group_dir_name):
     """Get xml files with Master Files data"""
+    group_dir = os.path.join(org_path, group_dir_name)
     try:
-        master_files_dir = data_dir + group_dir + "/Master Files/"
-        master_files_xml = os.listdir(master_files_dir)
+        master_files_dir = os.path.join(group_dir, "Master Files")
     except:
-        master_files_dir = data_dir + group_dir + "/MASTER FILES/"
-        master_files_xml = os.listdir(master_files_dir)
+        master_files_dir = os.path.join(group_dir, "MASTER FILES")
 
     return master_files_dir
 

@@ -1,14 +1,16 @@
 import datetime
 from dateutil.relativedelta import relativedelta
-from flask import Blueprint, render_template, url_for, redirect, flash
+from flask import Blueprint, render_template, url_for, redirect
 from flask_login import current_user
 from sqlalchemy.exc import OperationalError
 
+from app import session_maker
+from app.mod_auth.models import User
 from app.mod_stats.stats_utils import StatsDataExtractor, calc_quarter_timerange
 
 
 # define Blueprint for statistics module
-mod_stats = Blueprint('stats', __name__, url_prefix='/statistics')
+mod_stats = Blueprint('stats', __name__, url_prefix='/dashboard')
 
 
 @mod_stats.before_request
@@ -17,7 +19,6 @@ def check_authenticated_user():
     Restrict access to statistics to not authenticated users
     """
     if not current_user.is_authenticated:
-        flash("User is not recognized!")
         return redirect(url_for("auth.login"))
 
 
@@ -30,112 +31,6 @@ def handle_operational_error(error):
 
 
 @mod_stats.route("/", methods=["GET"])
-def show_data():
-    start_time = datetime.datetime.strptime("18/12/2017 10:46:52", "%d/%m/%Y %H:%M:%S")
-    end_time = datetime.datetime.strptime("18/12/2017 11:46:10", "%d/%m/%Y %H:%M:%S")
-    data_handler = StatsDataExtractor(start_time, end_time)
-
-    department_sales_data = data_handler.get_department_sales_data()
-    fixed_totalizers_data = data_handler.get_fixed_totalizers()
-    plu_sales_data = data_handler.get_plu_sales_data()
-    last_100_sales_data = data_handler.get_last_100_sales()
-    clerks_breakdown_data = data_handler.get_clerks_breakdown()
-    group_sales_total_data = data_handler.get_group_sales_data()
-    free_function_data = data_handler.get_free_func()
-
-    data_handler.close_session()
-
-    return render_template("stats/base.html",
-        group_sales_total_data=group_sales_total_data,
-        department_sales_data=department_sales_data,
-        fixed_totalizer_data=fixed_totalizers_data,
-        plu_sales_data=plu_sales_data,
-        last_100_sales_data=last_100_sales_data,
-        clerks_breakdown_data=clerks_breakdown_data,
-        free_function_data=free_function_data
-    )
-
-
-@mod_stats.route("/group_1", methods=["GET"])
-def show_data_group_1():
-    start_time = datetime.datetime.strptime("18/12/2017 10:46:52", "%d/%m/%Y %H:%M:%S")
-    end_time = datetime.datetime.strptime("18/12/2017 10:47:50", "%d/%m/%Y %H:%M:%S")
-    data_handler = StatsDataExtractor(start_time, end_time)
-
-    department_sales_data = data_handler.get_department_sales_data()
-    fixed_totalizers_data = data_handler.get_fixed_totalizers()
-    plu_sales_data = data_handler.get_plu_sales_data()
-    last_100_sales_data = data_handler.get_last_100_sales()
-    clerks_breakdown_data = data_handler.get_clerks_breakdown()
-    group_sales_total_data = data_handler.get_group_sales_data()
-    free_function_data = data_handler.get_free_func()
-
-    data_handler.close_session()
-
-    return render_template("stats/base.html",
-        group_sales_total_data=group_sales_total_data,
-        department_sales_data=department_sales_data,
-        fixed_totalizer_data=fixed_totalizers_data,
-        plu_sales_data=plu_sales_data,
-        last_100_sales_data=last_100_sales_data,
-        clerks_breakdown_data=clerks_breakdown_data,
-        free_function_data=free_function_data
-        )
-
-@mod_stats.route("/group_2", methods=["GET"])
-def show_data_group_2():
-    start_time = datetime.datetime.strptime("18/12/2017 11:03:23", "%d/%m/%Y %H:%M:%S")
-    end_time = datetime.datetime.strptime("18/12/2017 11:08:56", "%d/%m/%Y %H:%M:%S")
-    data_handler = StatsDataExtractor(start_time, end_time)
-
-    department_sales_data = data_handler.get_department_sales_data()
-    fixed_totalizers_data = data_handler.get_fixed_totalizers()
-    plu_sales_data = data_handler.get_plu_sales_data()
-    last_100_sales_data = data_handler.get_last_100_sales()
-    clerks_breakdown_data = data_handler.get_clerks_breakdown()
-    group_sales_total_data = data_handler.get_group_sales_data()
-    free_function_data = data_handler.get_free_func()
-
-    data_handler.close_session()
-
-    return render_template("stats/base.html",
-        group_sales_total_data=group_sales_total_data,
-        department_sales_data=department_sales_data,
-        fixed_totalizer_data=fixed_totalizers_data,
-        plu_sales_data=plu_sales_data,
-        last_100_sales_data=last_100_sales_data,
-        clerks_breakdown_data=clerks_breakdown_data,
-        free_function_data=free_function_data
-        )
-
-
-@mod_stats.route("/group_3", methods=["GET"])
-def show_data_group_3():
-    start_time = datetime.datetime.strptime("18/12/2017 11:31:08", "%d/%m/%Y %H:%M:%S")
-    end_time = datetime.datetime.strptime("18/12/2017 11:46:10", "%d/%m/%Y %H:%M:%S")
-    data_handler = StatsDataExtractor(start_time, end_time)
-
-    department_sales_data = data_handler.get_department_sales_data()
-    fixed_totalizers_data = data_handler.get_fixed_totalizers()
-    plu_sales_data = data_handler.get_plu_sales_data()
-    last_100_sales_data = data_handler.get_last_100_sales()
-    clerks_breakdown_data = data_handler.get_clerks_breakdown()
-    group_sales_total_data = data_handler.get_group_sales_data()
-    free_function_data = data_handler.get_free_func()
-
-    data_handler.close_session()
-
-    return render_template("stats/base.html",
-        group_sales_total_data=group_sales_total_data,
-        department_sales_data=department_sales_data,
-        fixed_totalizer_data=fixed_totalizers_data,
-        plu_sales_data=plu_sales_data,
-        last_100_sales_data=last_100_sales_data,
-        clerks_breakdown_data=clerks_breakdown_data,
-        free_function_data=free_function_data
-        )
-
-
 @mod_stats.route("/today", methods=["GET"])
 def show_today():
     """
@@ -144,8 +39,10 @@ def show_today():
     now_time = datetime.datetime.utcnow()
     start_time = now_time.replace(hour=0, minute=0, second=0, microsecond=0)
     end_time = now_time.replace(hour=23, minute=59, second=59)
-    print(start_time, end_time)
-    data_handler = StatsDataExtractor(start_time, end_time)
+    session = session_maker()
+    user = session.query(User).filter_by(id=current_user.id).first()
+    data_handler = StatsDataExtractor(user.organizations[0].id, start_time, end_time)
+    session.close()
 
     department_sales_data = data_handler.get_department_sales_data()
     fixed_totalizers_data = data_handler.get_fixed_totalizers()
@@ -158,14 +55,14 @@ def show_today():
     data_handler.close_session()
 
     return render_template("stats/base.html",
-        group_sales_total_data=group_sales_total_data,
-        department_sales_data=department_sales_data,
-        fixed_totalizer_data=fixed_totalizers_data,
-        plu_sales_data=plu_sales_data,
-        last_100_sales_data=last_100_sales_data,
-        clerks_breakdown_data=clerks_breakdown_data,
-        free_function_data=free_function_data
-        )
+                           group_sales_total_data=group_sales_total_data,
+                           department_sales_data=department_sales_data,
+                           fixed_totalizer_data=fixed_totalizers_data,
+                           plu_sales_data=plu_sales_data,
+                           last_100_sales_data=last_100_sales_data,
+                           clerks_breakdown_data=clerks_breakdown_data,
+                           free_function_data=free_function_data
+                           )
 
 @mod_stats.route("/yesterday", methods=["GET"])
 def show_yesterday():
@@ -177,7 +74,10 @@ def show_yesterday():
     yesterday = datetime.datetime.utcnow() - datetime.timedelta(days=1)
     end_time = yesterday.replace(hour=23, minute=59, second=59, microsecond=0)  # 23:59:59 of the day
     start_time = end_time - datetime.timedelta(days=1) + datetime.timedelta(seconds=1)  # 00:00:00 of the day
-    data_handler = StatsDataExtractor(start_time, end_time)
+    session = session_maker()
+    user = session.query(User).filter_by(id=current_user.id).first()
+    data_handler = StatsDataExtractor(user.organizations[0].id, start_time, end_time)
+    session.close()
 
     department_sales_data = data_handler.get_department_sales_data()
     fixed_totalizers_data = data_handler.get_fixed_totalizers()
@@ -190,14 +90,14 @@ def show_yesterday():
     data_handler.close_session()
 
     return render_template("stats/base.html",
-        group_sales_total_data=group_sales_total_data,
-        department_sales_data=department_sales_data,
-        fixed_totalizer_data=fixed_totalizers_data,
-        plu_sales_data=plu_sales_data,
-        last_100_sales_data=last_100_sales_data,
-        clerks_breakdown_data=clerks_breakdown_data,
-        free_function_data=free_function_data
-        )
+                           group_sales_total_data=group_sales_total_data,
+                           department_sales_data=department_sales_data,
+                           fixed_totalizer_data=fixed_totalizers_data,
+                           plu_sales_data=plu_sales_data,
+                           last_100_sales_data=last_100_sales_data,
+                           clerks_breakdown_data=clerks_breakdown_data,
+                           free_function_data=free_function_data
+                           )
 
 
 @mod_stats.route("/this_week", methods=["GET"])
@@ -217,7 +117,10 @@ def show_this_week():
     end_weekday = end_weekday.replace(hour=23, minute=59, second=59)
     start_weekday = end_weekday - datetime.timedelta(days=6)
     start_weekday = start_weekday.replace(hour=0, minute=0, second=0, microsecond=0)
-    data_handler = StatsDataExtractor(start_weekday, end_weekday)
+    session = session_maker()
+    user = session.query(User).filter_by(id=current_user.id).first()
+    data_handler = StatsDataExtractor(user.organizations[0].id, start_weekday, end_weekday)
+    session.close()
 
     department_sales_data = data_handler.get_department_sales_data()
     fixed_totalizers_data = data_handler.get_fixed_totalizers()
@@ -230,14 +133,14 @@ def show_this_week():
     data_handler.close_session()
 
     return render_template("stats/base.html",
-        group_sales_total_data=group_sales_total_data,
-        department_sales_data=department_sales_data,
-        fixed_totalizer_data=fixed_totalizers_data,
-        plu_sales_data=plu_sales_data,
-        last_100_sales_data=last_100_sales_data,
-        clerks_breakdown_data=clerks_breakdown_data,
-        free_function_data=free_function_data
-        )
+                           group_sales_total_data=group_sales_total_data,
+                           department_sales_data=department_sales_data,
+                           fixed_totalizer_data=fixed_totalizers_data,
+                           plu_sales_data=plu_sales_data,
+                           last_100_sales_data=last_100_sales_data,
+                           clerks_breakdown_data=clerks_breakdown_data,
+                           free_function_data=free_function_data
+                           )
 
 
 @mod_stats.route("/last_week", methods=["GET"])
@@ -257,7 +160,10 @@ def show_last_week():
     start_weekday = start_weekday.replace(hour=0, minute=0, second=0, microsecond=0)
     end_weekday = start_weekday + datetime.timedelta(days=6)
     end_weekday = end_weekday.replace(hour=23, minute=59, second=59)
-    data_handler = StatsDataExtractor(start_weekday, end_weekday)
+    session = session_maker()
+    user = session.query(User).filter_by(id=current_user.id).first()
+    data_handler = StatsDataExtractor(user.organizations[0].id, start_weekday, end_weekday)
+    session.close()
 
     department_sales_data = data_handler.get_department_sales_data()
     fixed_totalizers_data = data_handler.get_fixed_totalizers()
@@ -270,14 +176,14 @@ def show_last_week():
     data_handler.close_session()
 
     return render_template("stats/base.html",
-        group_sales_total_data=group_sales_total_data,
-        department_sales_data=department_sales_data,
-        fixed_totalizer_data=fixed_totalizers_data,
-        plu_sales_data=plu_sales_data,
-        last_100_sales_data=last_100_sales_data,
-        clerks_breakdown_data=clerks_breakdown_data,
-        free_function_data=free_function_data
-        )
+                           group_sales_total_data=group_sales_total_data,
+                           department_sales_data=department_sales_data,
+                           fixed_totalizer_data=fixed_totalizers_data,
+                           plu_sales_data=plu_sales_data,
+                           last_100_sales_data=last_100_sales_data,
+                           clerks_breakdown_data=clerks_breakdown_data,
+                           free_function_data=free_function_data
+                           )
 
 
 @mod_stats.route("/this_month", methods=["GET"])
@@ -296,7 +202,10 @@ def show_this_month():
             break
 
     start_month_day = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    data_handler = StatsDataExtractor(start_month_day, end_month_day)
+    session = session_maker()
+    user = session.query(User).filter_by(id=current_user.id).first()
+    data_handler = StatsDataExtractor(user.organizations[0].id, start_month_day, end_month_day)
+    session.close()
 
     department_sales_data = data_handler.get_department_sales_data()
     fixed_totalizers_data = data_handler.get_fixed_totalizers()
@@ -309,14 +218,14 @@ def show_this_month():
     data_handler.close_session()
 
     return render_template("stats/base.html",
-        group_sales_total_data=group_sales_total_data,
-        department_sales_data=department_sales_data,
-        fixed_totalizer_data=fixed_totalizers_data,
-        plu_sales_data=plu_sales_data,
-        last_100_sales_data=last_100_sales_data,
-        clerks_breakdown_data=clerks_breakdown_data,
-        free_function_data=free_function_data
-        )
+                           group_sales_total_data=group_sales_total_data,
+                           department_sales_data=department_sales_data,
+                           fixed_totalizer_data=fixed_totalizers_data,
+                           plu_sales_data=plu_sales_data,
+                           last_100_sales_data=last_100_sales_data,
+                           clerks_breakdown_data=clerks_breakdown_data,
+                           free_function_data=free_function_data
+                           )
 
 
 @mod_stats.route("/last_month", methods=["GET"])
@@ -337,7 +246,10 @@ def show_last_month():
             end_last_month_day = end_last_month_day.replace(hour=23, minute=59, second=59)
             break
 
-    data_handler = StatsDataExtractor(start_last_month_day, end_last_month_day)
+    session = session_maker()
+    user = session.query(User).filter_by(id=current_user.id).first()
+    data_handler = StatsDataExtractor(user.organizations[0].id, start_last_month_day, end_last_month_day)
+    session.close()
 
     department_sales_data = data_handler.get_department_sales_data()
     fixed_totalizers_data = data_handler.get_fixed_totalizers()
@@ -350,14 +262,14 @@ def show_last_month():
     data_handler.close_session()
 
     return render_template("stats/base.html",
-        group_sales_total_data=group_sales_total_data,
-        department_sales_data=department_sales_data,
-        fixed_totalizer_data=fixed_totalizers_data,
-        plu_sales_data=plu_sales_data,
-        last_100_sales_data=last_100_sales_data,
-        clerks_breakdown_data=clerks_breakdown_data,
-        free_function_data=free_function_data
-        )
+                           group_sales_total_data=group_sales_total_data,
+                           department_sales_data=department_sales_data,
+                           fixed_totalizer_data=fixed_totalizers_data,
+                           plu_sales_data=plu_sales_data,
+                           last_100_sales_data=last_100_sales_data,
+                           clerks_breakdown_data=clerks_breakdown_data,
+                           free_function_data=free_function_data
+                           )
 
 
 @mod_stats.route("/this_quarter", methods=["GET"])
@@ -369,7 +281,10 @@ def show_this_quarter():
     this_year = str(now_time.year)
     this_quarter = (now_time.month - 1) // 3 + 1
     start_month, end_month = calc_quarter_timerange(this_quarter, this_year)
-    data_handler = StatsDataExtractor(start_month, end_month)
+    session = session_maker()
+    user = session.query(User).filter_by(id=current_user.id).first()
+    data_handler = StatsDataExtractor(user.organizations[0].id, start_month, end_month)
+    session.close()
 
     department_sales_data = data_handler.get_department_sales_data()
     fixed_totalizers_data = data_handler.get_fixed_totalizers()
@@ -382,14 +297,14 @@ def show_this_quarter():
     data_handler.close_session()
 
     return render_template("stats/base.html",
-        group_sales_total_data=group_sales_total_data,
-        department_sales_data=department_sales_data,
-        fixed_totalizer_data=fixed_totalizers_data,
-        plu_sales_data=plu_sales_data,
-        last_100_sales_data=last_100_sales_data,
-        clerks_breakdown_data=clerks_breakdown_data,
-        free_function_data=free_function_data
-        )
+                           group_sales_total_data=group_sales_total_data,
+                           department_sales_data=department_sales_data,
+                           fixed_totalizer_data=fixed_totalizers_data,
+                           plu_sales_data=plu_sales_data,
+                           last_100_sales_data=last_100_sales_data,
+                           clerks_breakdown_data=clerks_breakdown_data,
+                           free_function_data=free_function_data
+                           )
 
 
 @mod_stats.route("/last_quarter", methods=["GET"])
@@ -399,9 +314,12 @@ def show_last_quarter():
     """
     lq_time = datetime.datetime.utcnow() - relativedelta(months=3)
     lq_year = str(lq_time.year)
-    last_quarter = (lq_time.month - 1) // 3 + 1
+    # last_quarter = (lq_time.month - 1) // 3 + 1
     start_month, end_month = calc_quarter_timerange(lq_time, lq_year)
-    data_handler = StatsDataExtractor(start_month, end_month)
+    session = session_maker()
+    user = session.query(User).filter_by(id=current_user.id).first()
+    data_handler = StatsDataExtractor(user.organizations[0].id, start_month, end_month)
+    session.close()
 
     department_sales_data = data_handler.get_department_sales_data()
     fixed_totalizers_data = data_handler.get_fixed_totalizers()
@@ -414,11 +332,11 @@ def show_last_quarter():
     data_handler.close_session()
 
     return render_template("stats/base.html",
-        group_sales_total_data=group_sales_total_data,
-        department_sales_data=department_sales_data,
-        fixed_totalizer_data=fixed_totalizers_data,
-        plu_sales_data=plu_sales_data,
-        last_100_sales_data=last_100_sales_data,
-        clerks_breakdown_data=clerks_breakdown_data,
-        free_function_data=free_function_data
-        )
+                           department_sales_data=department_sales_data,
+                           fixed_totalizer_data=fixed_totalizers_data,
+                           plu_sales_data=plu_sales_data,
+                           last_100_sales_data=last_100_sales_data,
+                           clerks_breakdown_data=clerks_breakdown_data,
+                           group_sales_total_data=group_sales_total_data,
+                           free_function_data=free_function_data
+                           )

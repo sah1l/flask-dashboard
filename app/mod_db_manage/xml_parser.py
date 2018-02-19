@@ -3,15 +3,12 @@ import os
 from datetime import datetime
 
 from app.mod_db_manage.utils import parse_xml, get_xml_records, get_order_xml, get_mf_dir, get_mf_xml, check_tag_length
-from app.mod_db_manage.config import DATA_DIR, SCRIPT_DIR
+from app.mod_db_manage.config import DATA_DIR
 
 
-GROUP_DIRS = []
-
-
-def get_orders_gen():
+def get_orders_gen(org_path):
     """Get orders data"""
-    order_files_gen = get_order_xml(GROUP_DIRS)
+    order_files_gen = get_order_xml(org_path)
 
     for of in order_files_gen:
         data = parse_xml(of)
@@ -27,12 +24,11 @@ def get_order_items_gen(order_file):
         yield ItemData(item)
 
 
-def get_fixed_total_gen(org_directory):
+def get_fixed_total_gen(org_path):
     """Get Fixed Totaliser data"""
-    group_dirs = os.listdir(os.path.join(SCRIPT_DIR,os.path.join(DATA_DIR, org_directory)))
-    print(group_dirs)
-    for group_dir in group_dirs:
-        mf_dir = get_mf_dir(SCRIPT_DIR + DATA_DIR, group_dir)
+    group_dirs_names = os.listdir(org_path)
+    for group_dir_name in group_dirs_names:
+        mf_dir = get_mf_dir(org_path, group_dir_name)
         mf_xml_files = get_mf_xml(mf_dir)
 
         for mf_file in mf_xml_files:
@@ -51,14 +47,15 @@ def get_fixed_total_gen(org_directory):
                 continue
 
 
-def get_free_func_gen():
+def get_free_func_gen(org_path):
     """Get Free function data"""
-    for group_dir in GROUP_DIRS:
-        mf_dir = get_mf_dir(SCRIPT_DIR + DATA_DIR, group_dir)
+    group_dirs_names = os.listdir(org_path)
+    for group_dir_name in group_dirs_names:
+        mf_dir = get_mf_dir(org_path, group_dir_name)
         mf_xml_files = get_mf_xml(mf_dir)
 
         for mf_file in mf_xml_files:
-            data = parse_xml(mf_dir + mf_file)
+            data = parse_xml(os.path.join(mf_dir, mf_file))
             name_tag = data.find("Name").text
 
             if name_tag == "Free Function":
@@ -78,14 +75,15 @@ def get_free_func_gen():
                 continue
 
 
-def get_group_gen():
+def get_group_gen(org_path):
     """Get Group data"""
-    for group_dir in GROUP_DIRS:
-        mf_dir = get_mf_dir(SCRIPT_DIR + DATA_DIR, group_dir)
+    group_dirs_names = os.listdir(org_path)
+    for group_dir_name in group_dirs_names:
+        mf_dir = get_mf_dir(org_path, group_dir_name)
         mf_xml_files = get_mf_xml(mf_dir)
 
         for mf_file in mf_xml_files:
-            data = parse_xml(mf_dir + mf_file)
+            data = parse_xml(os.path.join(mf_dir, mf_file))
             name_tag = data.find("Name").text
 
             if name_tag == "Group":
@@ -105,14 +103,15 @@ def get_group_gen():
                 continue
 
 
-def get_department_gen():
+def get_department_gen(org_path):
     """Get Department data"""
-    for group_dir in GROUP_DIRS:
-        mf_dir = get_mf_dir(SCRIPT_DIR + DATA_DIR, group_dir)
+    group_dirs_names = os.listdir(org_path)
+    for group_dir_name in group_dirs_names:
+        mf_dir = get_mf_dir(org_path, group_dir_name)
         mf_xml_files = get_mf_xml(mf_dir)
 
         for mf_file in mf_xml_files:
-            data = parse_xml(mf_dir + mf_file)
+            data = parse_xml(os.path.join(mf_dir, mf_file))
             name_tag = data.find("Name").text
 
             if name_tag == "Department":
@@ -132,14 +131,15 @@ def get_department_gen():
                 continue
 
 
-def get_plu_gen():
+def get_plu_gen(org_path):
     """Get PLU data"""
-    for group_dir in GROUP_DIRS:
-        mf_dir = get_mf_dir(SCRIPT_DIR + DATA_DIR, group_dir)
+    group_dirs_names = os.listdir(org_path)
+    for group_dir_name in group_dirs_names:
+        mf_dir = get_mf_dir(org_path, group_dir_name)
         mf_xml_files = get_mf_xml(mf_dir)
 
         for mf_file in mf_xml_files:
-            data = parse_xml(mf_dir + mf_file)
+            data = parse_xml(os.path.join(mf_dir, mf_file))
             name_tag = data.find("Name").text
 
             if name_tag == "PLU":
@@ -158,14 +158,15 @@ def get_plu_gen():
                 continue
 
 
-def get_plu2nd_gen():
+def get_plu2nd_gen(org_path):
     """Get PLU data"""
-    for group_dir in GROUP_DIRS:
-        mf_dir = get_mf_dir(SCRIPT_DIR + DATA_DIR, group_dir)
+    group_dirs_names = os.listdir(org_path)
+    for group_dir_name in group_dirs_names:
+        mf_dir = get_mf_dir(org_path, group_dir_name)
         mf_xml_files = get_mf_xml(mf_dir)
 
         for mf_file in mf_xml_files:
-            data = parse_xml(mf_dir + mf_file)
+            data = parse_xml(os.path.join(mf_dir, mf_file))
             name_tag = data.find("Name").text
 
             if name_tag == "PLU 2nd":
@@ -184,14 +185,15 @@ def get_plu2nd_gen():
                 continue
 
 
-def get_clerk_gen():
+def get_clerk_gen(org_path):
     """Get PLU data"""
-    for group_dir in GROUP_DIRS:
-        mf_dir = get_mf_dir(SCRIPT_DIR + DATA_DIR, group_dir)
+    group_dirs_names = os.listdir(org_path)
+    for group_dir_name in group_dirs_names:
+        mf_dir = get_mf_dir(org_path, group_dir_name)
         mf_xml_files = get_mf_xml(mf_dir)
 
         for mf_file in mf_xml_files:
-            data = parse_xml(mf_dir + mf_file)
+            data = parse_xml(os.path.join(mf_dir, mf_file))
             name_tag = data.find("Name").text
 
             if name_tag == "Clerk":
@@ -210,14 +212,15 @@ def get_clerk_gen():
                 continue
 
 
-def get_customer_gen():
+def get_customer_gen(org_path):
     """Get PLU data"""
-    for group_dir in GROUP_DIRS:
-        mf_dir = get_mf_dir(SCRIPT_DIR + DATA_DIR, group_dir)
+    group_dirs_names = os.listdir(org_path)
+    for group_dir_name in group_dirs_names:
+        mf_dir = get_mf_dir(org_path, group_dir_name)
         mf_xml_files = get_mf_xml(mf_dir)
 
         for mf_file in mf_xml_files:
-            data = parse_xml(mf_dir + mf_file)
+            data = parse_xml(os.path.join(mf_dir, mf_file))
             name_tag = data.find("Name").text
 
             if name_tag == "Customers":
@@ -237,14 +240,15 @@ def get_customer_gen():
                 continue
 
 
-def get_mixmatch_gen():
+def get_mixmatch_gen(org_path):
     """Get Mix & Match data"""
-    for group_dir in GROUP_DIRS:
-        mf_dir = get_mf_dir(SCRIPT_DIR + DATA_DIR, group_dir)
+    group_dirs_names = os.listdir(org_path)
+    for group_dir_name in group_dirs_names:
+        mf_dir = get_mf_dir(org_path, group_dir_name)
         mf_xml_files = get_mf_xml(mf_dir)
 
         for mf_file in mf_xml_files:
-            data = parse_xml(mf_dir + mf_file)
+            data = parse_xml(os.path.join(mf_dir, mf_file))
             name_tag = data.find("Name").text
 
             if name_tag == "Mix & Match":
@@ -263,14 +267,15 @@ def get_mixmatch_gen():
                 continue
 
 
-def get_tax_gen():
+def get_tax_gen(org_path):
     """Get tax data"""
-    for group_dir in GROUP_DIRS:
-        mf_dir = get_mf_dir(SCRIPT_DIR + DATA_DIR, group_dir)
+    group_dirs_names = os.listdir(org_path)
+    for group_dir_name in group_dirs_names:
+        mf_dir = get_mf_dir(org_path, group_dir_name)
         mf_xml_files = get_mf_xml(mf_dir)
 
         for mf_file in mf_xml_files:
-            data = parse_xml(mf_dir + mf_file)
+            data = parse_xml(os.path.join(mf_dir, mf_file))
             name_tag = data.find("Name").text
 
             if name_tag == "Tax table":
@@ -337,9 +342,7 @@ class PLUData(MasterData):
         self.department_number = record.find("DepartmentNo").text
         self.price = record.find("Price").text
         self.tax_number = record.find("TaxNo").text
-        self.random_code = record.find("RandomeCode").text
-        self.mix_match = record.find("MixMatch").text
-        self.description = record.find("Description").text
+        self.mix_match_number = record.find("MixMatch").text
 
 
 class PLU2ndData(MasterData):
