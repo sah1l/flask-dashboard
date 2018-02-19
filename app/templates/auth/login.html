@@ -1,8 +1,8 @@
 {% extends "layout.html" %}
 
 {% block login_block %}
-    <div class="col-lg-4 offset-lg-4 col-sm-6 offset-sm-3 col-xs-12" id="login-block">
-        <h3>Log In</h3>
+    <div class="add-record-block col-lg-4 offset-lg-4 col-sm-6 offset-sm-3 col-xs-12" id="login-block">
+        <h4>Log In</h4>
         <form action="" method="post" class="form-horizontal" role="form" id="login-form">
             {{ form.hidden_tag() }}
             <div class="form-group col-lg-10">
@@ -19,8 +19,10 @@
                 <span class="error">{{ error }}</span>
                 {% endfor %}
             </div>
-            <p>{{ form.remember_me() }} {{ form.remember_me.label }}</p>
-            <p>{{ form.submit(class="btn") }}</p>
+            <div class="submit-panel">
+                <div>{{ form.remember_me() }} {{ form.remember_me.label }}</div>
+                <div>{{ form.submit(class="btn") }}</div>
+            </div>
         </form>
     </div>
 {% endblock %}
