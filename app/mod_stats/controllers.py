@@ -7,6 +7,7 @@ from sqlalchemy.exc import OperationalError
 from app import session_maker
 from app.mod_auth.models import User
 from app.mod_stats.stats_utils import StatsDataExtractor, calc_quarter_timerange
+from app.mod_stats.forms import CustomizeStatsForm
 
 
 # define Blueprint for statistics module
@@ -30,9 +31,9 @@ def handle_operational_error(error):
     return "No connection with database"
 
 
-@mod_stats.route("/", methods=["GET"])
-@mod_stats.route("/today", methods=["GET"])
-def show_today():
+@mod_stats.route("/<org_id>", methods=["GET", "POST"])
+@mod_stats.route("/<org_id>/today", methods=["GET", "POST"])
+def show_today(org_id):
     """
     Shows data for current day since 00:00:00
     """
@@ -41,8 +42,15 @@ def show_today():
     end_time = now_time.replace(hour=23, minute=59, second=59)
     session = session_maker()
     user = session.query(User).filter_by(id=current_user.id).first()
-    data_handler = StatsDataExtractor(user.organizations[0].id, start_time, end_time)
-    session.close()
+
+    if not user.organizations:
+        return render_template("stats/base.html")
+
+    # fix this
+    if org_id == 0:
+        org_id = user.organizations[0].id
+
+    data_handler = StatsDataExtractor(org_id, start_time, end_time)
 
     department_sales_data = data_handler.get_department_sales_data()
     fixed_totalizers_data = data_handler.get_fixed_totalizers()
@@ -53,6 +61,14 @@ def show_today():
     free_function_data = data_handler.get_free_func()
 
     data_handler.close_session()
+    form = CustomizeStatsForm()
+    orgs = user.organizations
+    form.organization.choices = [(org.id, org.name) for org in orgs]
+    session.close()
+
+    if form.validate_on_submit():
+        org_id = form.organization.data
+        return redirect(url_for("stats.show_today", org_id=org_id))
 
     return render_template("stats/base.html",
                            group_sales_total_data=group_sales_total_data,
@@ -61,7 +77,8 @@ def show_today():
                            plu_sales_data=plu_sales_data,
                            last_100_sales_data=last_100_sales_data,
                            clerks_breakdown_data=clerks_breakdown_data,
-                           free_function_data=free_function_data
+                           free_function_data=free_function_data,
+                           form=form
                            )
 
 @mod_stats.route("/yesterday", methods=["GET"])

@@ -1,58 +1,64 @@
 {% extends "layout.html" %}
 
+{% set department_sales_data = {} %}
+{% set fixed_totalizer_data = {} %}
+{% set plu_sales_data = {} %}
+{% set last_100_sales_data = {} %}
+{% set clerks_breakdown_data = {} %}
+{% set group_sales_total_data = {} %}
+{% set free_function_data = {} %}
+
 {% block body %}
-
-<!-- Navigation bar block -->
-{% block navbar %}
-<div class="page-content">
-    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12" id="time-slice-navigation">
-        <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-content"
-            aria-controls="navbar-content" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <div class="navbar-collapse collapse" id="navbar-content">
-            <ul class="nav navbar-nav" id="periodselector">
-                <li class="nav-item" id="period-today"><a class="nav-link" href="today">Today</a></li>
-                <li class="nav-item" id="period-yesterday"><a class="nav-link" href="yesterday">Yesterday</a></li>
-                <li class="nav-item" id="period-thisweek"><a class="nav-link" href="this_week">This week</a></li>
-                <li class="nav-item" id="period-lastweek"><a class="nav-link" href="last_week">Last week</a></li>
-                <li class="nav-item" id="period-thismonth"><a class="nav-link" href="this_month">This month</a></li>
-                <li class="nav-item" id="period-lastmonth"><a class="nav-link" href="last_month">Last month</a></li>
-                <li class="nav-item" id="period-thisquarter"><a class="nav-link" href="this_quarter">This quarter</a></li>
-                <li class="nav-item" id="period-lastquarter"><a class="nav-link" href="last_quarter">Last quarter</a></li>
-            </ul>
+    <!-- Select organization form -->
+        {% if form %}
+        <div class="col-lg-12" id="customize-request">
+            <form action="" method="post" class="form-horizontal" role="form" id="customize-request-form">
+                {{ form.hidden_tag() }}
+                <div class="form-group">
+                    {{ form.organization.label }}
+                    {{ form.organization(class="form-control", id="select-organization") }}
+                </div>
+                    {{ form.submit(class="btn") }}
+            </form>
         </div>
-        </nav>
-    </div>
+        {% endif %}
 
-    {% endblock %}
+    <!-- Navigation bar block -->
+    <div class="page-content">
+        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12" id="time-slice-navigation">
+            <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-content"
+                        aria-controls="navbar-content" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse" id="navbar-content">
+                    <ul class="nav navbar-nav" id="periodselector">
+                        <li class="nav-item" id="period-today"><a class="nav-link" href="today">Today</a></li>
+                        <li class="nav-item" id="period-yesterday"><a class="nav-link" href="yesterday">Yesterday</a></li>
+                        <li class="nav-item" id="period-thisweek"><a class="nav-link" href="this_week">This week</a></li>
+                        <li class="nav-item" id="period-lastweek"><a class="nav-link" href="last_week">Last week</a></li>
+                        <li class="nav-item" id="period-thismonth"><a class="nav-link" href="this_month">This month</a></li>
+                        <li class="nav-item" id="period-lastmonth"><a class="nav-link" href="last_month">Last month</a></li>
+                        <li class="nav-item" id="period-thisquarter"><a class="nav-link" href="this_quarter">This quarter</a></li>
+                        <li class="nav-item" id="period-lastquarter"><a class="nav-link" href="last_quarter">Last quarter</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </div>
 
-    {% block content %}
-
-    <!-- Test block for urls -->
-    <!-- delete -->
-    <a href="group_1">Group 1 data |</a>
-    <a href="group_2">Group 2 data |</a>
-    <a href="group_3">Group 3 data |</a>
-    <a href="/statistics">All data</a>
-    <!-- /delete -->
-
-    <!-- Table blocks -->
-    <div class="row">
-    {% include "stats/department_sales_table.html" %}
-    {% include "stats/fixed_totals_table.html" %}
-    {% include "stats/plu_sales_table.html" %}
+        <!-- Table blocks -->
+        <div class="row">
+            {% include "stats/department_sales_table.html" %}
+            {% include "stats/fixed_totals_table.html" %}
+            {% include "stats/plu_sales_table.html" %}
+        </div>
+        <div class="row">
+            {% include "stats/last_100_sales_table.html" %}
+            {% include "stats/clerks_breakdown_table.html" %}
+            {% include "stats/group_sales_total_table.html" %}
+        </div>
+        <div class="row">
+            {% include "stats/free_function_table.html" %}
+        </div>
     </div>
-    <div class="row">
-    {% include "stats/last_100_sales_table.html" %}
-    {% include "stats/clerks_breakdown_table.html" %}
-    {% include "stats/group_sales_total_table.html" %}
-    </div>
-    <div class="row">
-    {% include "stats/free_function_table.html" %}
-    </div>
-</div>
-{% endblock %}
 {% endblock %}

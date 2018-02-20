@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, BooleanField, SelectField
-from wtforms.validators import DataRequired, Email, EqualTo
+from wtforms.validators import DataRequired, Email, EqualTo, Length
 from wtforms.ext.sqlalchemy.fields import QuerySelectField
 
 from app import session_maker
@@ -13,7 +13,7 @@ class LoginForm(FlaskForm):
     Login Form
     """
     email = StringField('Email', validators=[DataRequired(), Email()])
-    password = PasswordField('Password', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired(), Length(min=5, max=20)])
     remember_me = BooleanField('Remember Me')
     submit = SubmitField('Sign In')
 

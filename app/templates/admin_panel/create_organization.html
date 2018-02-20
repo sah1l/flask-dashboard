@@ -21,7 +21,7 @@
         </div>
         <div class="form-group">
             {{ form.users.label(class="col-lg-2") }}
-            <div class="col-lg-5">{{ form.users }}</div>
+            <div class="col-lg-5">{{ form.users(class="form-control") }}</div>
             {% for error in form.users.errors %}
             <span class="error">{{ error }}</span>
             {% endfor %}

@@ -102,6 +102,20 @@
     padding-left: 0;
 }
 
+#customize-request {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    padding-left: 0;
+}
+
+#select-organization {
+    width: 200px;
+}
+
+.form-group label {
+    padding-right: 10px;
+}
+
 /* Footer */
 
 #footer-row {

@@ -40,7 +40,8 @@
                             {% if current_user.is_admin %}
                                 <li class="nav-item"><a class="nav-link" id="admin-nav-item" href="{{ url_for("admin.show_panel") }}">Admin Panel</a></li>
                             {% endif %}
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for("stats.show_today") }}">Dashboard</a></li>
+                            <!-- Fix org_id=0 (0 should not be there) -->
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for("stats.show_today", org_id=0) }}">Dashboard</a></li>
                             <li class="nav-item"><a class="nav-link" href="">Profile Settings</a></li>
                             <li class="nav-item"><a class="nav-link" href="">Error logs</a></li>
                         </ul>

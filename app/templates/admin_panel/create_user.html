@@ -39,7 +39,7 @@
         </div>
         <div class="form-group">
             {{ form.organizations.label(class="col-lg-2") }}
-            <div class="col-lg-5">{{ form.organizations }}</div>
+            <div class="col-lg-5">{{ form.organizations(class="form-control") }}</div>
             {% for error in form.organizations.errors %}
             <span class="error">{{ error }}</span>
             {% endfor %}
