@@ -44,7 +44,7 @@ def show_today(org_id):
     user = session.query(User).filter_by(id=current_user.id).first()
 
     if not user.organizations:
-        return render_template("stats/base.html")
+        return render_template("stats/base.html", error_message="You do not have any organizations yet.")
 
     # fix this
     if org_id == 0:
@@ -81,8 +81,8 @@ def show_today(org_id):
                            form=form
                            )
 
-@mod_stats.route("/yesterday", methods=["GET"])
-def show_yesterday():
+@mod_stats.route("/<org_id>/yesterday", methods=["GET", "POST"])
+def show_yesterday(org_id):
     """
     Shows data for day before current day 
 
@@ -93,8 +93,15 @@ def show_yesterday():
     start_time = end_time - datetime.timedelta(days=1) + datetime.timedelta(seconds=1)  # 00:00:00 of the day
     session = session_maker()
     user = session.query(User).filter_by(id=current_user.id).first()
-    data_handler = StatsDataExtractor(user.organizations[0].id, start_time, end_time)
-    session.close()
+
+    if not user.organizations:
+        return render_template("stats/base.html", error_message="You do not have any organizations yet.")
+
+    # fix this
+    if org_id == 0:
+        org_id = user.organizations[0].id
+
+    data_handler = StatsDataExtractor(org_id, start_time, end_time)
 
     department_sales_data = data_handler.get_department_sales_data()
     fixed_totalizers_data = data_handler.get_fixed_totalizers()
@@ -105,6 +112,14 @@ def show_yesterday():
     free_function_data = data_handler.get_free_func()
 
     data_handler.close_session()
+    form = CustomizeStatsForm()
+    orgs = user.organizations
+    form.organization.choices = [(org.id, org.name) for org in orgs]
+    session.close()
+
+    if form.validate_on_submit():
+        org_id = form.organization.data
+        return redirect(url_for("stats.show_yesterday", org_id=org_id))
 
     return render_template("stats/base.html",
                            group_sales_total_data=group_sales_total_data,
@@ -113,12 +128,13 @@ def show_yesterday():
                            plu_sales_data=plu_sales_data,
                            last_100_sales_data=last_100_sales_data,
                            clerks_breakdown_data=clerks_breakdown_data,
-                           free_function_data=free_function_data
+                           free_function_data=free_function_data,
+                           form=form
                            )
 
 
-@mod_stats.route("/this_week", methods=["GET"])
-def show_this_week():
+@mod_stats.route("/<org_id>/this_week", methods=["GET", "POST"])
+def show_this_week(org_id):
     """
     Shows data starting from Monday of this week (00:00:00) 
 
@@ -136,8 +152,15 @@ def show_this_week():
     start_weekday = start_weekday.replace(hour=0, minute=0, second=0, microsecond=0)
     session = session_maker()
     user = session.query(User).filter_by(id=current_user.id).first()
-    data_handler = StatsDataExtractor(user.organizations[0].id, start_weekday, end_weekday)
-    session.close()
+
+    if not user.organizations:
+        return render_template("stats/base.html", error_message="You do not have any organizations yet.")
+
+    # fix this
+    if org_id == 0:
+        org_id = user.organizations[0].id
+
+    data_handler = StatsDataExtractor(org_id, start_weekday, end_weekday)
 
     department_sales_data = data_handler.get_department_sales_data()
     fixed_totalizers_data = data_handler.get_fixed_totalizers()
@@ -148,6 +171,14 @@ def show_this_week():
     free_function_data = data_handler.get_free_func()
 
     data_handler.close_session()
+    form = CustomizeStatsForm()
+    orgs = user.organizations
+    form.organization.choices = [(org.id, org.name) for org in orgs]
+    session.close()
+
+    if form.validate_on_submit():
+        org_id = form.organization.data
+        return redirect(url_for("stats.show_this_week", org_id=org_id))
 
     return render_template("stats/base.html",
                            group_sales_total_data=group_sales_total_data,
@@ -156,12 +187,13 @@ def show_this_week():
                            plu_sales_data=plu_sales_data,
                            last_100_sales_data=last_100_sales_data,
                            clerks_breakdown_data=clerks_breakdown_data,
-                           free_function_data=free_function_data
+                           free_function_data=free_function_data,
+                           form=form
                            )
 
 
-@mod_stats.route("/last_week", methods=["GET"])
-def show_last_week():
+@mod_stats.route("/<org_id>/last_week", methods=["GET", "POST"])
+def show_last_week(org_id):
     """
     Shows data starting from Monday of the last week (00:00:00)
 
@@ -179,8 +211,15 @@ def show_last_week():
     end_weekday = end_weekday.replace(hour=23, minute=59, second=59)
     session = session_maker()
     user = session.query(User).filter_by(id=current_user.id).first()
-    data_handler = StatsDataExtractor(user.organizations[0].id, start_weekday, end_weekday)
-    session.close()
+
+    if not user.organizations:
+        return render_template("stats/base.html", error_message="You do not have any organizations yet.")
+
+    # fix this
+    if org_id == 0:
+        org_id = user.organizations[0].id
+
+    data_handler = StatsDataExtractor(org_id, start_weekday, end_weekday)
 
     department_sales_data = data_handler.get_department_sales_data()
     fixed_totalizers_data = data_handler.get_fixed_totalizers()
@@ -191,6 +230,14 @@ def show_last_week():
     free_function_data = data_handler.get_free_func()
 
     data_handler.close_session()
+    form = CustomizeStatsForm()
+    orgs = user.organizations
+    form.organization.choices = [(org.id, org.name) for org in orgs]
+    session.close()
+
+    if form.validate_on_submit():
+        org_id = form.organization.data
+        return redirect(url_for("stats.show_last_week", org_id=org_id))
 
     return render_template("stats/base.html",
                            group_sales_total_data=group_sales_total_data,
@@ -199,12 +246,13 @@ def show_last_week():
                            plu_sales_data=plu_sales_data,
                            last_100_sales_data=last_100_sales_data,
                            clerks_breakdown_data=clerks_breakdown_data,
-                           free_function_data=free_function_data
+                           free_function_data=free_function_data,
+                           form=form
                            )
 
 
-@mod_stats.route("/this_month", methods=["GET"])
-def show_this_month():
+@mod_stats.route("/<org_id>/this_month", methods=["GET", "POST"])
+def show_this_month(org_id):
     """
     Shows data starting from the first day of current month to current day of the month
     """
@@ -221,8 +269,15 @@ def show_this_month():
     start_month_day = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     session = session_maker()
     user = session.query(User).filter_by(id=current_user.id).first()
-    data_handler = StatsDataExtractor(user.organizations[0].id, start_month_day, end_month_day)
-    session.close()
+
+    if not user.organizations:
+        return render_template("stats/base.html", error_message="You do not have any organizations yet.")
+
+    # fix this
+    if org_id == 0:
+        org_id = user.organizations[0].id
+
+    data_handler = StatsDataExtractor(org_id, start_month_day, end_month_day)
 
     department_sales_data = data_handler.get_department_sales_data()
     fixed_totalizers_data = data_handler.get_fixed_totalizers()
@@ -233,6 +288,14 @@ def show_this_month():
     free_function_data = data_handler.get_free_func()
 
     data_handler.close_session()
+    form = CustomizeStatsForm()
+    orgs = user.organizations
+    form.organization.choices = [(org.id, org.name) for org in orgs]
+    session.close()
+
+    if form.validate_on_submit():
+        org_id = form.organization.data
+        return redirect(url_for("stats.show_this_month", org_id=org_id))
 
     return render_template("stats/base.html",
                            group_sales_total_data=group_sales_total_data,
@@ -241,12 +304,13 @@ def show_this_month():
                            plu_sales_data=plu_sales_data,
                            last_100_sales_data=last_100_sales_data,
                            clerks_breakdown_data=clerks_breakdown_data,
-                           free_function_data=free_function_data
+                           free_function_data=free_function_data,
+                           form=form
                            )
 
 
-@mod_stats.route("/last_month", methods=["GET"])
-def show_last_month():
+@mod_stats.route("/<org_id>/last_month", methods=["GET", "POST"])
+def show_last_month(org_id):
     """
     Shows data starting from the 1st day of last month
 
@@ -265,8 +329,15 @@ def show_last_month():
 
     session = session_maker()
     user = session.query(User).filter_by(id=current_user.id).first()
-    data_handler = StatsDataExtractor(user.organizations[0].id, start_last_month_day, end_last_month_day)
-    session.close()
+
+    if not user.organizations:
+        return render_template("stats/base.html", error_message="You do not have any organizations yet.")
+
+    # fix this
+    if org_id == 0:
+        org_id = user.organizations[0].id
+
+    data_handler = StatsDataExtractor(org_id, start_last_month_day, end_last_month_day)
 
     department_sales_data = data_handler.get_department_sales_data()
     fixed_totalizers_data = data_handler.get_fixed_totalizers()
@@ -277,6 +348,14 @@ def show_last_month():
     free_function_data = data_handler.get_free_func()
 
     data_handler.close_session()
+    form = CustomizeStatsForm()
+    orgs = user.organizations
+    form.organization.choices = [(org.id, org.name) for org in orgs]
+    session.close()
+
+    if form.validate_on_submit():
+        org_id = form.organization.data
+        return redirect(url_for("stats.show_last_month", org_id=org_id))
 
     return render_template("stats/base.html",
                            group_sales_total_data=group_sales_total_data,
@@ -285,12 +364,13 @@ def show_last_month():
                            plu_sales_data=plu_sales_data,
                            last_100_sales_data=last_100_sales_data,
                            clerks_breakdown_data=clerks_breakdown_data,
-                           free_function_data=free_function_data
+                           free_function_data=free_function_data,
+                           form=form
                            )
 
 
-@mod_stats.route("/this_quarter", methods=["GET"])
-def show_this_quarter():
+@mod_stats.route("/<org_id>/this_quarter", methods=["GET", "POST"])
+def show_this_quarter(org_id):
     """
     Shows data depending on current quarter of the year
     """
@@ -300,8 +380,15 @@ def show_this_quarter():
     start_month, end_month = calc_quarter_timerange(this_quarter, this_year)
     session = session_maker()
     user = session.query(User).filter_by(id=current_user.id).first()
-    data_handler = StatsDataExtractor(user.organizations[0].id, start_month, end_month)
-    session.close()
+
+    if not user.organizations:
+        return render_template("stats/base.html", error_message="You do not have any organizations yet.")
+
+    # fix this
+    if org_id == 0:
+        org_id = user.organizations[0].id
+
+    data_handler = StatsDataExtractor(org_id, start_month, end_month)
 
     department_sales_data = data_handler.get_department_sales_data()
     fixed_totalizers_data = data_handler.get_fixed_totalizers()
@@ -312,6 +399,14 @@ def show_this_quarter():
     free_function_data = data_handler.get_free_func()
 
     data_handler.close_session()
+    form = CustomizeStatsForm()
+    orgs = user.organizations
+    form.organization.choices = [(org.id, org.name) for org in orgs]
+    session.close()
+
+    if form.validate_on_submit():
+        org_id = form.organization.data
+        return redirect(url_for("stats.show_this_quarter", org_id=org_id))
 
     return render_template("stats/base.html",
                            group_sales_total_data=group_sales_total_data,
@@ -320,12 +415,13 @@ def show_this_quarter():
                            plu_sales_data=plu_sales_data,
                            last_100_sales_data=last_100_sales_data,
                            clerks_breakdown_data=clerks_breakdown_data,
-                           free_function_data=free_function_data
+                           free_function_data=free_function_data,
+                           form=form
                            )
 
 
-@mod_stats.route("/last_quarter", methods=["GET"])
-def show_last_quarter():
+@mod_stats.route("/<org_id>/last_quarter", methods=["GET", "POST"])
+def show_last_quarter(org_id):
     """
     Shows data depending on current quarter of the year
     """
@@ -335,8 +431,15 @@ def show_last_quarter():
     start_month, end_month = calc_quarter_timerange(lq_time, lq_year)
     session = session_maker()
     user = session.query(User).filter_by(id=current_user.id).first()
-    data_handler = StatsDataExtractor(user.organizations[0].id, start_month, end_month)
-    session.close()
+
+    if not user.organizations:
+        return render_template("stats/base.html", error_message="You do not have any organizations yet.")
+
+    # fix this
+    if org_id == 0:
+        org_id = user.organizations[0].id
+
+    data_handler = StatsDataExtractor(org_id, start_month, end_month)
 
     department_sales_data = data_handler.get_department_sales_data()
     fixed_totalizers_data = data_handler.get_fixed_totalizers()
@@ -347,6 +450,14 @@ def show_last_quarter():
     free_function_data = data_handler.get_free_func()
 
     data_handler.close_session()
+    form = CustomizeStatsForm()
+    orgs = user.organizations
+    form.organization.choices = [(org.id, org.name) for org in orgs]
+    session.close()
+
+    if form.validate_on_submit():
+        org_id = form.organization.data
+        return redirect(url_for("stats.show_last_quarter", org_id=org_id))
 
     return render_template("stats/base.html",
                            department_sales_data=department_sales_data,
@@ -355,5 +466,6 @@ def show_last_quarter():
                            last_100_sales_data=last_100_sales_data,
                            clerks_breakdown_data=clerks_breakdown_data,
                            group_sales_total_data=group_sales_total_data,
-                           free_function_data=free_function_data
+                           free_function_data=free_function_data,
+                           form=form
                            )
