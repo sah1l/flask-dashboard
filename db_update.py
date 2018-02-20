@@ -8,6 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from app import db, base
 from app.models import Organization, FixedTotalizer, FreeFunction, Department, Group, PLU, PLU2nd, MixMatch, Tax, \
                         Clerk, Customer, Order, OrderLine
+from app.mod_auth.models import User
 from app.mod_db_manage.xml_parser import get_orders_gen, get_order_items_gen, get_fixed_total_gen, get_free_func_gen, \
                         get_department_gen, get_group_gen, get_plu_gen, get_clerk_gen, get_customer_gen, \
                         get_mixmatch_gen, get_plu2nd_gen, get_tax_gen
@@ -427,6 +428,8 @@ class DBInsert:
 
 if __name__ == "__main__":
     session_maker = sessionmaker(db)
+    base.metadata.create_all(db)
+
     data_path = os.path.join(SCRIPT_DIR, DATA_DIR)
     org_dirs = os.listdir(data_path)
     for org_dir in org_dirs:
@@ -434,6 +437,7 @@ if __name__ == "__main__":
         org_data_path = os.path.join(data_path, org_dir)
         session = session_maker()
         org_id = session.query(Organization.id).filter_by(data_dir=org_dir).first()
+        
         if not org_id:
             print('org with dir {} was not found'.format(org_dir))
             continue
@@ -453,3 +457,11 @@ if __name__ == "__main__":
         db_insert.insert_order_data()
 
         db_insert.close_session()
+
+    # session = session_maker()
+    # user = User(username="admin", email="admin@mail.com", is_admin=True)
+    # user.set_password("12345")
+    # session.add(user)
+    # session.commit()
+    # session.close()
+

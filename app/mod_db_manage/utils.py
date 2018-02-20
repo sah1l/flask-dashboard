@@ -36,9 +36,8 @@ def get_order_xml(org_path):
 def get_mf_dir(org_path, group_dir_name):
     """Get xml files with Master Files data"""
     group_dir = os.path.join(org_path, group_dir_name)
-    try:
-        master_files_dir = os.path.join(group_dir, "Master Files")
-    except:
+    master_files_dir = os.path.join(group_dir, "Master Files")
+    if not os.path.isdir(master_files_dir):
         master_files_dir = os.path.join(group_dir, "MASTER FILES")
 
     return master_files_dir
