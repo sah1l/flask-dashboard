@@ -2,8 +2,6 @@ import os
 import re
 import xml.etree.ElementTree as ET
 
-from app.mod_db_manage.config import DATA_DIR, SCRIPT_DIR
-
 
 def parse_xml(filename):
     """Return content of an XML file"""
