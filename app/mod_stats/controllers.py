@@ -5,6 +5,7 @@ from flask_login import current_user
 from sqlalchemy.exc import OperationalError
 
 from app import session_maker
+from app.models import Organization
 from app.mod_auth.models import User
 from app.mod_stats.stats_utils import StatsDataExtractor, calc_quarter_timerange
 from app.mod_stats.forms import CustomizeStatsForm
@@ -64,6 +65,7 @@ def show_today(org_id):
     form = CustomizeStatsForm()
     orgs = user.organizations
     form.organization.choices = [(org.id, org.name) for org in orgs]
+    org_name = session.query(Organization).filter_by(id=org_id).first().name
     session.close()
 
     if form.validate_on_submit():
@@ -78,7 +80,8 @@ def show_today(org_id):
                            last_100_sales_data=last_100_sales_data,
                            clerks_breakdown_data=clerks_breakdown_data,
                            free_function_data=free_function_data,
-                           form=form
+                           form=form,
+                           organization_name=org_name
                            )
 
 @mod_stats.route("/<org_id>/yesterday", methods=["GET", "POST"])

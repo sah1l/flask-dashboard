@@ -115,6 +115,10 @@
     padding-right: 10px;
 }
 
+#organization-name h5 {
+    margin-bottom: 20px;
+}
+
 /* Footer */
 
 #footer-row {
