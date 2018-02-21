@@ -118,6 +118,7 @@ def show_yesterday(org_id):
     form = CustomizeStatsForm()
     orgs = user.organizations
     form.organization.choices = [(org.id, org.name) for org in orgs]
+    org_name = session.query(Organization).filter_by(id=org_id).first().name
     session.close()
 
     if form.validate_on_submit():
@@ -132,7 +133,8 @@ def show_yesterday(org_id):
                            last_100_sales_data=last_100_sales_data,
                            clerks_breakdown_data=clerks_breakdown_data,
                            free_function_data=free_function_data,
-                           form=form
+                           form=form,
+                           organization_name=org_name
                            )
 
 
@@ -177,6 +179,7 @@ def show_this_week(org_id):
     form = CustomizeStatsForm()
     orgs = user.organizations
     form.organization.choices = [(org.id, org.name) for org in orgs]
+    org_name = session.query(Organization).filter_by(id=org_id).first().name
     session.close()
 
     if form.validate_on_submit():
@@ -191,7 +194,8 @@ def show_this_week(org_id):
                            last_100_sales_data=last_100_sales_data,
                            clerks_breakdown_data=clerks_breakdown_data,
                            free_function_data=free_function_data,
-                           form=form
+                           form=form,
+                           organization_name=org_name
                            )
 
 
@@ -236,6 +240,7 @@ def show_last_week(org_id):
     form = CustomizeStatsForm()
     orgs = user.organizations
     form.organization.choices = [(org.id, org.name) for org in orgs]
+    org_name = session.query(Organization).filter_by(id=org_id).first().name
     session.close()
 
     if form.validate_on_submit():
@@ -250,7 +255,8 @@ def show_last_week(org_id):
                            last_100_sales_data=last_100_sales_data,
                            clerks_breakdown_data=clerks_breakdown_data,
                            free_function_data=free_function_data,
-                           form=form
+                           form=form,
+                           organization_name=org_name
                            )
 
 
@@ -294,6 +300,7 @@ def show_this_month(org_id):
     form = CustomizeStatsForm()
     orgs = user.organizations
     form.organization.choices = [(org.id, org.name) for org in orgs]
+    org_name = session.query(Organization).filter_by(id=org_id).first().name
     session.close()
 
     if form.validate_on_submit():
@@ -308,7 +315,8 @@ def show_this_month(org_id):
                            last_100_sales_data=last_100_sales_data,
                            clerks_breakdown_data=clerks_breakdown_data,
                            free_function_data=free_function_data,
-                           form=form
+                           form=form,
+                           organization_name=org_name
                            )
 
 
@@ -354,6 +362,7 @@ def show_last_month(org_id):
     form = CustomizeStatsForm()
     orgs = user.organizations
     form.organization.choices = [(org.id, org.name) for org in orgs]
+    org_name = session.query(Organization).filter_by(id=org_id).first().name
     session.close()
 
     if form.validate_on_submit():
@@ -368,7 +377,8 @@ def show_last_month(org_id):
                            last_100_sales_data=last_100_sales_data,
                            clerks_breakdown_data=clerks_breakdown_data,
                            free_function_data=free_function_data,
-                           form=form
+                           form=form,
+                           organization_name=org_name
                            )
 
 
@@ -405,6 +415,7 @@ def show_this_quarter(org_id):
     form = CustomizeStatsForm()
     orgs = user.organizations
     form.organization.choices = [(org.id, org.name) for org in orgs]
+    org_name = session.query(Organization).filter_by(id=org_id).first().name
     session.close()
 
     if form.validate_on_submit():
@@ -419,7 +430,8 @@ def show_this_quarter(org_id):
                            last_100_sales_data=last_100_sales_data,
                            clerks_breakdown_data=clerks_breakdown_data,
                            free_function_data=free_function_data,
-                           form=form
+                           form=form,
+                           organization_name=org_name
                            )
 
 
@@ -456,6 +468,7 @@ def show_last_quarter(org_id):
     form = CustomizeStatsForm()
     orgs = user.organizations
     form.organization.choices = [(org.id, org.name) for org in orgs]
+    org_name = session.query(Organization).filter_by(id=org_id).first().name
     session.close()
 
     if form.validate_on_submit():
@@ -470,5 +483,6 @@ def show_last_quarter(org_id):
                            clerks_breakdown_data=clerks_breakdown_data,
                            group_sales_total_data=group_sales_total_data,
                            free_function_data=free_function_data,
-                           form=form
+                           form=form,
+                           organization_name=org_name
                            )
