@@ -98,6 +98,10 @@
 
 /* Dashboard */
 
+#stats-panel-row {
+    padding-left: 20px;
+}
+
 #time-slice-navigation {
     padding-left: 0;
 }
@@ -108,7 +112,7 @@
 }
 
 #select-organization {
-    width: 200px;
+    margin-right: 0;
 }
 
 .form-group label {

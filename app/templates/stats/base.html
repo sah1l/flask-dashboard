@@ -6,8 +6,8 @@
         <!-- User has organizations -->
 
         <!-- Select organization form -->
-        {% if form %}
-            <div class="col-lg-12" id="customize-request">
+        <div class="row" id="stats-panel-row">
+            <div class="col-lg-3 col-md-3 col-sm-12 col-xs-12" id="customize-request">
                 <form action="" method="post" class="form-horizontal" role="form" id="customize-request-form">
                     {{ form.hidden_tag() }}
                     <div class="form-group">
@@ -17,32 +17,29 @@
                     {{ form.submit(class="btn") }}
                 </form>
             </div>
-        {% endif %}
 
-        <div id="organization-name">
-            <h5>Show data for: {{ organization_name }}</h5>
+            <!-- Navigation bar block -->
+            <div class="col-lg-9 col-md-9 col-sm-12 col-xs-12" id="time-slice-navigation">
+                <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                    <div class="navbar" id="navbar-content">
+                        <ul class="nav navbar-nav" id="periodselector">
+                            <li class="nav-item" id="period-today"><a class="nav-link" href="today">Today</a></li>
+                            <li class="nav-item" id="period-yesterday"><a class="nav-link" href="yesterday">Yesterday</a></li>
+                            <li class="nav-item" id="period-thisweek"><a class="nav-link" href="this_week">This week</a></li>
+                            <li class="nav-item" id="period-lastweek"><a class="nav-link" href="last_week">Last week</a></li>
+                            <li class="nav-item" id="period-thismonth"><a class="nav-link" href="this_month">This month</a></li>
+                            <li class="nav-item" id="period-lastmonth"><a class="nav-link" href="last_month">Last month</a></li>
+                            <li class="nav-item" id="period-thisquarter"><a class="nav-link" href="this_quarter">This quarter</a></li>
+                            <li class="nav-item" id="period-lastquarter"><a class="nav-link" href="last_quarter">Last quarter</a></li>
+                        </ul>
+                    </div>
+                </nav>
+            </div>
         </div>
 
-        <!-- Navigation bar block -->
-        <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12" id="time-slice-navigation">
-            <nav class="navbar navbar-expand-lg navbar-light bg-light">
-                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-content"
-                        aria-controls="navbar-content" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse" id="navbar-content">
-                    <ul class="nav navbar-nav" id="periodselector">
-                        <li class="nav-item" id="period-today"><a class="nav-link" href="today">Today</a></li>
-                        <li class="nav-item" id="period-yesterday"><a class="nav-link" href="yesterday">Yesterday</a></li>
-                        <li class="nav-item" id="period-thisweek"><a class="nav-link" href="this_week">This week</a></li>
-                        <li class="nav-item" id="period-lastweek"><a class="nav-link" href="last_week">Last week</a></li>
-                        <li class="nav-item" id="period-thismonth"><a class="nav-link" href="this_month">This month</a></li>
-                        <li class="nav-item" id="period-lastmonth"><a class="nav-link" href="last_month">Last month</a></li>
-                        <li class="nav-item" id="period-thisquarter"><a class="nav-link" href="this_quarter">This quarter</a></li>
-                        <li class="nav-item" id="period-lastquarter"><a class="nav-link" href="last_quarter">Last quarter</a></li>
-                    </ul>
-                </div>
-            </nav>
+        <!-- Organization's title -->
+        <div id="organization-name">
+            <h5>Show data for: {{ organization_name }}</h5>
         </div>
 
         <!-- Table blocks -->
