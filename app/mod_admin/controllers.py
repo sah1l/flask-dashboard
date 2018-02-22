@@ -21,7 +21,9 @@ def check_authenticated_user():
     else:
         if not current_user.is_admin:  # user is not admin
             flash("You don't have admin rights to view this page!")
-            return redirect(url_for("stats.show_today"))
+            org_id = current_user.organizations[0].id
+            print(org_id)
+            return redirect(url_for("stats.show_today", org_id=org_id))
 
 
 @mod_admin.route("/", methods=["GET"])
@@ -37,7 +39,6 @@ def add_user():
     session = session_maker()
     form = UserCreateForm()
     orgs = session.query(Organization).all()
-    # empty_choice = [(0, " " * 10)]
     form.organizations.choices = [(org.id, org.name) for org in orgs]
 
     if form.validate_on_submit():
@@ -66,24 +67,28 @@ def edit_user(user_id):
     form = UserCreateForm()
     session = session_maker()
     user = session.query(User).filter_by(id=user_id).first()
+    orgs = session.query(Organization).all()
+    form.organizations.choices = [(org.id, org.name) for org in orgs]
 
-    if request.method == "GET":
+    if form.validate_on_submit():
+        user.username=form.username.data
+        # user.email=form.email.data
+        # user.set_password(form.password.data)
+        user.is_admin = form.is_admin.data
+        # user.organization = form.organization.data
+        orgs = []
+
+        for org_id in form.organizations.data:
+            org = session.query(Organization).filter_by(id=org_id).first()
+            orgs.append(org)
+
+        user.organizations = orgs
+        # session.add(user)
+        session.commit()
         session.close()
-        return render_template("admin_panel/edit_user.html", form=form, user=user)
+        return redirect(url_for("admin.show_panel"))
 
-    else:
-        if form.validate_on_submit():
-            user.username=form.username.data
-            user.email=form.email.data
-            user.set_password(form.password.data)
-            user.is_admin = form.is_admin.data
-            user.organization = form.organization.data
-            session.add(user)
-            session.commit()
-            session.close()
-            return redirect(url_for("admin.show_panel"))
-        else:
-            return render_template("admin_panel/edit_user.html", form=form, user=user)
+    return render_template("admin_panel/edit_user.html", form=form, user=user)
 
 
 @mod_admin.route("/delete_user/<user_id>", methods=["GET", "POST"])

@@ -23,7 +23,7 @@ class UserCreateForm(FlaskForm):
     # organizations = QuerySelectField(query_factory=Organization.objects.all,
     #                                  get_pk=lambda u: u.id,
     #                                  get_label=lambda u: u.username)
-    submit = SubmitField('Add user')
+    submit = SubmitField('Save')
 
     def __init__(self, *args, **kwargs):
         FlaskForm.__init__(self, *args, **kwargs)
@@ -54,7 +54,7 @@ class OrgCreateForm(FlaskForm):
                                 widget=widgets.TableWidget(with_table_tag=True),
                                 option_widget=widgets.CheckboxInput(),
                                 coerce=int)
-    submit = SubmitField('Add organization')
+    submit = SubmitField('Save')
 
     def __init__(self, *args, **kwargs):
         FlaskForm.__init__(self, *args, **kwargs)

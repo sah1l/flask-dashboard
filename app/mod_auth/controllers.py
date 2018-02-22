@@ -2,6 +2,7 @@ from flask import Blueprint, redirect, url_for, flash, render_template
 from flask_login import current_user, login_user, logout_user
 
 from app import session_maker
+from app.models import Organization
 from app.mod_auth.models import User
 from app.mod_auth.forms import LoginForm
 
@@ -17,13 +18,20 @@ def login():
 
     If successful, statistics for current day is shown (/statistics/show_today)
     """
+    session = session_maker()
     if current_user.is_authenticated:
-        return redirect(url_for('stats.show_today'))
+        user = session.query(User).filter_by(email=current_user.email).first()
+
+        # change this
+        if user.organizations:
+            org_id = user.organizations[0].id
+        else:
+            org_id = 0
+        session.close()
+        return redirect(url_for('stats.show_today', org_id=org_id))
 
     form = LoginForm()
     if form.validate_on_submit():
-        # additional validation on uniqueness subject
-        session = session_maker()
         user = session.query(User).filter_by(email=form.email.data).first()
 
         # change this
