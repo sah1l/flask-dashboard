@@ -9,8 +9,8 @@ from app import base
 Bind users and organizations
 """
 users_orgs_association_table = Table("users_orgs_association", base.metadata,
-                                     Column("org_id", Integer, ForeignKey("organizations.id")),
-                                     Column("user_id", Integer, ForeignKey("users.id")))
+                                     Column("org_id", Integer, ForeignKey("organizations.id", ondelete="CASCADE")),
+                                     Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE")))
 
 
 class Organization(base):
@@ -22,6 +22,18 @@ class Organization(base):
     users = relationship("User",
                          secondary=users_orgs_association_table,
                          back_populates="organizations")
+    fixed_totalizers = relationship("FixedTotalizer", cascade="delete")
+    free_functions = relationship("FreeFunction", cascade="delete")
+    groups = relationship("Group", cascade="delete")
+    departments = relationship("Department", cascade="delete")
+    mixmatch = relationship("MixMatch", cascade="delete")
+    taxes = relationship("Tax", cascade="delete")
+    plus = relationship("PLU", cascade="delete")
+    plus2nd = relationship("PLU2nd", cascade="delete")
+    clerks = relationship("Clerk", cascade="delete")
+    customers = relationship("Customer", cascade="delete")
+    orders = relationship("Order", cascade="delete")
+
 
 class Master(base):
     """Base class for Master files data"""
@@ -37,7 +49,7 @@ class Master(base):
 class FixedTotalizer(Master):
     __tablename__ = "fixed_totalizers"
 
-    org_id = Column(Integer, ForeignKey("organizations.id"))
+    org_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"))
     name = Column(String(50))
     orderlines = relationship("OrderLine", back_populates="fixed_totalizer")
 
@@ -49,7 +61,7 @@ class FixedTotalizer(Master):
 class FreeFunction(Master):
     __tablename__ = "free_functions"
 
-    org_id = Column(Integer, ForeignKey("organizations.id"))
+    org_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"))
     name = Column(String(50))
     function_number = Column(String(50))
     orderlines = relationship("OrderLine", back_populates="free_function")
@@ -62,7 +74,7 @@ class FreeFunction(Master):
 class Group(Master):
     __tablename__ = "groups"
 
-    org_id = Column(Integer, ForeignKey("organizations.id"))
+    org_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"))
     name = Column(String(50))
     departments = relationship("Department", back_populates="group")
     plus = relationship("PLU", back_populates="group")
@@ -76,7 +88,7 @@ class Group(Master):
 class Department(Master):
     __tablename__ = "departments"
 
-    org_id = Column(Integer, ForeignKey("organizations.id"))
+    org_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"))
     name = Column(String(50))
     group_id = Column(Integer, ForeignKey("groups.id"), nullable=True)
     group = relationship("Group", back_populates="departments")
@@ -91,7 +103,7 @@ class Department(Master):
 class MixMatch(Master):
     __tablename__ = "mix_match"
 
-    org_id = Column(Integer, ForeignKey("organizations.id"))
+    org_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"))
     name = Column(String(50))
     operation_type = Column(Integer)
     qty_req = Column(Integer)
@@ -106,7 +118,7 @@ class MixMatch(Master):
 class Tax(Master):
     __tablename__ = "taxes"
 
-    org_id = Column(Integer, ForeignKey("organizations.id"))
+    org_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"))
     name = Column(String(50))
     rate = Column(Integer)
     plus = relationship("PLU", back_populates="tax")
@@ -120,7 +132,7 @@ class Tax(Master):
 class PLU(Master):
     __tablename__ = "plu"
 
-    org_id = Column(Integer, ForeignKey("organizations.id"))
+    org_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"))
     name = Column(String(50))
     group_id = Column(Integer, ForeignKey("groups.id"), nullable=True)
     group = relationship("Group", back_populates="plus")
@@ -141,7 +153,7 @@ class PLU(Master):
 class PLU2nd(Master):
     __tablename__ = "plu_2nd"
 
-    org_id = Column(Integer, ForeignKey("organizations.id"))
+    org_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"))
     name = Column(String(50))
     group_id = Column(Integer, ForeignKey("groups.id"), nullable=True)
     group = relationship("Group", back_populates="plus_2nd")
@@ -161,7 +173,7 @@ class PLU2nd(Master):
 class Clerk(Master):
     __tablename__ = "clerks"
 
-    org_id = Column(Integer, ForeignKey("organizations.id"))
+    org_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"))
     name = Column(String(50))
     orders = relationship("Order", back_populates="clerk")
 
@@ -173,7 +185,7 @@ class Clerk(Master):
 class Customer(Master):
     __tablename__ = "customers"
 
-    org_id = Column(Integer, ForeignKey("organizations.id"))
+    org_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"))
     first_name = Column(String(50))
     surname = Column(String(50))
     addr1 = Column(String(100))
@@ -197,7 +209,7 @@ class Order(base):
     id = Column(Integer, primary_key=True)
     date_time = Column(DateTime)
     filepath = Column(String(100))
-    org_id = Column(Integer, ForeignKey("organizations.id"))
+    org_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"))
     mode = Column(String(50))
     consecutive_number = Column(Integer)
     terminal_number = Column(Integer)
@@ -207,7 +219,7 @@ class Order(base):
     customer_id = Column(Integer, ForeignKey("customers.id"), nullable=True)
     table_number = Column(Integer)
     payment_type = Column(String(20))
-    items = relationship("OrderLine", back_populates="order")
+    items = relationship("OrderLine", back_populates="order", cascade="all, delete-orphan")
 
     def __repr__(self):
         return "Order: ID=%s filepath=%s" % (self.id, self.filepath)
@@ -217,7 +229,7 @@ class OrderLine(base):
     __tablename__ = "order_lines"
 
     id = Column(Integer, primary_key=True)
-    order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
+    order_id = Column(Integer, ForeignKey("orders.id", ondelete="CASCADE"), nullable=False)
     order = relationship("Order", uselist=False, back_populates="items")
     item_type = Column(Integer, nullable=False)
     qty = Column(Integer, nullable=False)

@@ -2,7 +2,7 @@ from flask import Blueprint, request, flash, redirect, url_for, render_template
 from flask_login import current_user
 
 from app import session_maker
-from app.models import Organization
+from app.models import Organization, users_orgs_association_table
 from app.mod_auth.models import User
 from app.mod_admin.forms import OrgCreateForm, UserCreateForm
 
@@ -89,7 +89,8 @@ def edit_user(user_id):
 @mod_admin.route("/delete_user/<user_id>", methods=["GET", "POST"])
 def delete_user(user_id):
     session = session_maker()
-    session.query(User).filter_by(id=user_id).delete()
+    user = session.query(User).filter_by(id=user_id).first()
+    session.delete(user)
     session.commit()
     session.close()
 
@@ -140,7 +141,8 @@ def edit_organization(org_id):
 @mod_admin.route("/delete_organization/<org_id>", methods=["GET", "POST"])
 def delete_organization(org_id):
     session = session_maker()
-    session.query(Organization).filter_by(id=org_id).delete()
+    org = session.query(Organization).filter_by(id=org_id).first()
+    session.delete(org)
     session.commit()
     session.close()
 
