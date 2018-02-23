@@ -1,10 +1,10 @@
-from flask import Blueprint, request, flash, redirect, url_for, render_template
+from flask import Blueprint, redirect, url_for, render_template
 from flask_login import current_user
 
 from app import session_maker
-from app.models import Organization, users_orgs_association_table
+from app.models import Organization
 from app.mod_auth.models import User
-from app.mod_admin.forms import OrgCreateForm, UserCreateForm, UserEditForm, UserEmailEditForm
+from app.mod_admin.forms import OrgCreateForm, UserCreateForm, UserInfoForm, EmailForm, PasswordForm
 
 # define Blueprint for admin module
 mod_admin = Blueprint('admin', __name__, url_prefix='/admin_panel')
@@ -16,11 +16,9 @@ def check_authenticated_user():
     Restrict access to admin panel to non-admin users
     """
     if not current_user.is_authenticated:  # user is not authenticated
-        flash("User is not recognized!")
         return redirect(url_for("auth.login"))
     else:
         if not current_user.is_admin:  # user is not admin
-            flash("You don't have admin rights to view this page!")
             org_id = current_user.organizations[0].id
             return redirect(url_for("stats.show_today", org_id=org_id))
 
@@ -63,14 +61,14 @@ def add_user():
 
 @mod_admin.route("/edit_user/<user_id>", methods=["GET", "POST"])
 def edit_user(user_id):
-    form = UserEditForm()
+    form = UserInfoForm()
     session = session_maker()
     user = session.query(User).filter_by(id=user_id).first()
     orgs = session.query(Organization).all()
     form.organizations.choices = [(org.id, org.name) for org in orgs]
 
     if form.validate_on_submit():
-        user.username=form.username.data
+        user.username = form.username.data
         user.is_admin = form.is_admin.data
         orgs = []
 
@@ -85,9 +83,10 @@ def edit_user(user_id):
 
     return render_template("admin_panel/edit_user.html", form=form, user=user)
 
-@mod_admin.route("/edit_user/<user_id>/edit_email", methods=["GET", "POST"])
-def edit_user_email(user_id):
-    form = UserEmailEditForm()
+
+@mod_admin.route("/edit_user/<user_id>/email", methods=["GET", "POST"])
+def change_email(user_id):
+    form = EmailForm()
     session = session_maker()
     user = session.query(User).filter_by(id=user_id).first()
 
@@ -99,6 +98,20 @@ def edit_user_email(user_id):
 
     return render_template("admin_panel/edit_user_email.html", form=form, user=user)
 
+
+@mod_admin.route("/edit_user/<user_id>/password", methods=["GET", "POST"])
+def change_password(user_id):
+    form = PasswordForm()
+    session = session_maker()
+    user = session.query(User).filter_by(id=user_id).first()
+
+    if form.validate_on_submit():
+        user.set_password(form.password.data)
+        session.commit()
+        session.close()
+        return redirect(url_for("admin.show_panel"))
+
+    return render_template("admin_panel/edit_user_password.html", form=form, user=user)
 
 
 @mod_admin.route("/delete_user/<user_id>", methods=["GET", "POST"])

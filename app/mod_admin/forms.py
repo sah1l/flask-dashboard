@@ -7,23 +7,32 @@ from app.models import Organization
 from app.mod_auth.models import User
 
 
-class UserCreateForm(FlaskForm):
-    """
-    Registration form for new user
-    """
+class UserInfoForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
-    email = StringField('Email', validators=[DataRequired(), Email()])
-    password = PasswordField('Password', validators=[DataRequired(), Length(min=5, max=20)])
-    password2 = PasswordField('Repeat Password', validators=[DataRequired(), EqualTo('password')])
     is_admin = BooleanField('Is Admin', default=False)
     organizations = SelectMultipleField('Organizations',
                                         widget=widgets.TableWidget(with_table_tag=True),
                                         option_widget=widgets.CheckboxInput(),
                                         coerce=int)
-    # organizations = QuerySelectField(query_factory=Organization.objects.all,
-    #                                  get_pk=lambda u: u.id,
-    #                                  get_label=lambda u: u.username)
-    submit = SubmitField('Save')
+    submit = SubmitField('Update')
+
+
+class EmailForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    submit = SubmitField('Update email')
+
+
+class PasswordForm(FlaskForm):
+    password = PasswordField('Password', validators=[DataRequired(), Length(min=5, max=20)])
+    password2 = PasswordField('Repeat Password', validators=[DataRequired(), EqualTo('password')])
+    submit = SubmitField('Update password')
+
+
+class UserCreateForm(UserInfoForm, EmailForm, PasswordForm):
+    """
+    Registration form for new user
+    """
+    submit = SubmitField('Add user')
 
     def __init__(self, *args, **kwargs):
         FlaskForm.__init__(self, *args, **kwargs)
@@ -39,32 +48,6 @@ class UserCreateForm(FlaskForm):
         if user:
             self.email.errors.append("This email is already taken.")
             session.close()
-            return False
-
-        return True
-
-
-class UserEditForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired()])
-    is_admin = BooleanField('Is Admin', default=False)
-    organizations = SelectMultipleField('Organizations',
-                                        widget=widgets.TableWidget(with_table_tag=True),
-                                        option_widget=widgets.CheckboxInput(),
-                                        coerce=int)
-    submit = SubmitField('Save')
-
-
-class UserEmailEditForm(FlaskForm):
-    email = StringField('Email', validators=[DataRequired(), Email()])
-    submit = SubmitField('Save')
-
-    def __init__(self, *args, **kwargs):
-        FlaskForm.__init__(self, *args, **kwargs)
-        self.org = None
-
-    def validate(self):
-        rv = FlaskForm.validate(self)
-        if not rv:
             return False
 
         return True
