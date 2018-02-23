@@ -1,7 +1,8 @@
 {% extends "admin_panel/base.html" %}
 
 {% block content %}
-    <div class="add-record-block col-lg-12">
+    <a href="{{ url_for("admin.edit_user_email", user_id=user.id) }}">Change email</a>
+    <div class="edit-user-block col-lg-12">
         <h4>Edit {{ user.username }}</h4>
         <form action="" method="post" class="form-horizontal" role="form">
             {{ form.hidden_tag() }}
@@ -12,27 +13,6 @@
                     <span class="error">{{ error }}</span>
                 {% endfor %}
             </div>
-{#            <div class="form-group">#}
-{#                {{ form.email.label(class="col-lg-2") }}#}
-{#                <div class="col-lg-5">{{ form.email(size=32, class="form-control", value=user.email) }}</div>#}
-{#                {% for error in form.email.errors %}#}
-{#                    <span class="error">{{ error }}</span>#}
-{#                {% endfor %}#}
-{#            </div>#}
-{#            <div class="form-group">#}
-{#                {{ form.password.label(class="col-lg-2") }}#}
-{#                <div class="col-lg-5">{{ form.password(size=32, class="form-control") }}</div>#}
-{#                {% for error in form.password.errors %}#}
-{#                    <span class="error">{{ error }}</span>#}
-{#                {% endfor %}#}
-{#            </div>#}
-{#            <div class="form-group">#}
-{#                {{ form.password2.label(class="col-lg-2") }}#}
-{#                <div class="col-lg-5">{{ form.password2(size=32, class="form-control") }}</div>#}
-{#                {% for error in form.password2.errors %}#}
-{#                    <span class="error">{{ error }}</span>#}
-{#                {% endfor %}#}
-{#            </div>#}
             <div class="form-group">
                 {{ form.is_admin.label(class="col-lg-2") }}
                 <div class="col-lg-5" id="is_admin">{{ form.is_admin(checked=user.is_admin) }}</div>

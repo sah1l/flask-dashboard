@@ -4,7 +4,7 @@ from flask_login import current_user
 from app import session_maker
 from app.models import Organization, users_orgs_association_table
 from app.mod_auth.models import User
-from app.mod_admin.forms import OrgCreateForm, UserCreateForm, UserEditForm
+from app.mod_admin.forms import OrgCreateForm, UserCreateForm, UserEditForm, UserEmailEditForm
 
 # define Blueprint for admin module
 mod_admin = Blueprint('admin', __name__, url_prefix='/admin_panel')
@@ -84,6 +84,21 @@ def edit_user(user_id):
         return redirect(url_for("admin.show_panel"))
 
     return render_template("admin_panel/edit_user.html", form=form, user=user)
+
+@mod_admin.route("/edit_user/<user_id>/edit_email", methods=["GET", "POST"])
+def edit_user_email(user_id):
+    form = UserEmailEditForm()
+    session = session_maker()
+    user = session.query(User).filter_by(id=user_id).first()
+
+    if form.validate_on_submit():
+        user.email = form.email.data
+        session.commit()
+        session.close()
+        return redirect(url_for("admin.show_panel"))
+
+    return render_template("admin_panel/edit_user_email.html", form=form, user=user)
+
 
 
 @mod_admin.route("/delete_user/<user_id>", methods=["GET", "POST"])

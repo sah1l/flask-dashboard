@@ -53,6 +53,23 @@ class UserEditForm(FlaskForm):
                                         coerce=int)
     submit = SubmitField('Save')
 
+
+class UserEmailEditForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    submit = SubmitField('Save')
+
+    def __init__(self, *args, **kwargs):
+        FlaskForm.__init__(self, *args, **kwargs)
+        self.org = None
+
+    def validate(self):
+        rv = FlaskForm.validate(self)
+        if not rv:
+            return False
+
+        return True
+
+
 class OrgCreateForm(FlaskForm):
     """
     Create form for an organization
