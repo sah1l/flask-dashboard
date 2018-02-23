@@ -4,7 +4,7 @@ from flask_login import current_user
 from app import session_maker
 from app.models import Organization, users_orgs_association_table
 from app.mod_auth.models import User
-from app.mod_admin.forms import OrgCreateForm, UserCreateForm
+from app.mod_admin.forms import OrgCreateForm, UserCreateForm, UserEditForm
 
 # define Blueprint for admin module
 mod_admin = Blueprint('admin', __name__, url_prefix='/admin_panel')
@@ -22,7 +22,6 @@ def check_authenticated_user():
         if not current_user.is_admin:  # user is not admin
             flash("You don't have admin rights to view this page!")
             org_id = current_user.organizations[0].id
-            print(org_id)
             return redirect(url_for("stats.show_today", org_id=org_id))
 
 
@@ -64,7 +63,7 @@ def add_user():
 
 @mod_admin.route("/edit_user/<user_id>", methods=["GET", "POST"])
 def edit_user(user_id):
-    form = UserCreateForm()
+    form = UserEditForm()
     session = session_maker()
     user = session.query(User).filter_by(id=user_id).first()
     orgs = session.query(Organization).all()
@@ -72,10 +71,7 @@ def edit_user(user_id):
 
     if form.validate_on_submit():
         user.username=form.username.data
-        # user.email=form.email.data
-        # user.set_password(form.password.data)
         user.is_admin = form.is_admin.data
-        # user.organization = form.organization.data
         orgs = []
 
         for org_id in form.organizations.data:
@@ -83,7 +79,6 @@ def edit_user(user_id):
             orgs.append(org)
 
         user.organizations = orgs
-        # session.add(user)
         session.commit()
         session.close()
         return redirect(url_for("admin.show_panel"))

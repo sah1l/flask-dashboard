@@ -44,6 +44,15 @@ class UserCreateForm(FlaskForm):
         return True
 
 
+class UserEditForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    is_admin = BooleanField('Is Admin', default=False)
+    organizations = SelectMultipleField('Organizations',
+                                        widget=widgets.TableWidget(with_table_tag=True),
+                                        option_widget=widgets.CheckboxInput(),
+                                        coerce=int)
+    submit = SubmitField('Save')
+
 class OrgCreateForm(FlaskForm):
     """
     Create form for an organization
