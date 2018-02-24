@@ -1,7 +1,9 @@
-{% extends "admin_panel/base.html" %}
+{% extends "admin_panel/edit_user.html" %}
 
-{% block content %}
-    <div class="edit-user-block col-lg-12">
+{% set state_email = "active" %}
+
+{% block edit_user %}
+    <div class="tab-pane container edit-user-block col-lg-12">
         <h4>Edit {{ user.username }}'s email</h4>
         <form action="" method="post" class="form-horizontal" role="form">
             {{ form.hidden_tag() }}

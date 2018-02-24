@@ -60,7 +60,7 @@ def add_user():
 
 
 @mod_admin.route("/edit_user/<user_id>", methods=["GET", "POST"])
-def edit_user(user_id):
+def change_userinfo(user_id):
     form = UserInfoForm()
     session = session_maker()
     user = session.query(User).filter_by(id=user_id).first()
@@ -81,7 +81,7 @@ def edit_user(user_id):
         session.close()
         return redirect(url_for("admin.show_panel"))
 
-    return render_template("admin_panel/edit_user.html", form=form, user=user)
+    return render_template("admin_panel/change_userinfo.html", form=form, user=user)
 
 
 @mod_admin.route("/edit_user/<user_id>/email", methods=["GET", "POST"])
@@ -96,7 +96,7 @@ def change_email(user_id):
         session.close()
         return redirect(url_for("admin.show_panel"))
 
-    return render_template("admin_panel/edit_user_email.html", form=form, user=user)
+    return render_template("admin_panel/change_email.html", form=form, user=user)
 
 
 @mod_admin.route("/edit_user/<user_id>/password", methods=["GET", "POST"])
@@ -111,7 +111,7 @@ def change_password(user_id):
         session.close()
         return redirect(url_for("admin.show_panel"))
 
-    return render_template("admin_panel/edit_user_password.html", form=form, user=user)
+    return render_template("admin_panel/change_password.html", form=form, user=user)
 
 
 @mod_admin.route("/delete_user/<user_id>", methods=["GET", "POST"])
