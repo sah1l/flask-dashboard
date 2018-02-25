@@ -10,7 +10,7 @@ from sqlalchemy import and_
 from sqlalchemy.orm import sessionmaker
 
 from app import db
-from app.models import OrderLine, Order
+from app.models import OrderLine, Order, Organization
 
 
 PLU_ITEM_TYPE = 0
@@ -147,7 +147,7 @@ def tax_fill_values(dictionary, tax_name, tax_name_amt, vat, net_amount):
     return dictionary
 
 
-class StatsDataExtractor():
+class StatsDataExtractor:
     """
     Extracts statistics data from database.
     Handles time frames.
@@ -155,20 +155,19 @@ class StatsDataExtractor():
     def __init__(self, org_id, start_time, end_time):
         session_maker = sessionmaker(db)
         self.session = session_maker()
+        self.org_id = org_id
         self.start_time = start_time
         self.end_time = end_time
         self.orderlines = self.session.query(OrderLine).join(OrderLine.order).filter(
             and_(
-                Order.org_id==org_id,
-                Order.date_time>=self.start_time, 
-                Order.date_time<=self.end_time
+                Order.org_id == org_id,
+                Order.date_time >= self.start_time,
+                Order.date_time <= self.end_time
                 )
             )
 
-
     def close_session(self):
         self.session.close()
-
 
     def get_department_sales_data(self):
         """
@@ -193,9 +192,8 @@ class StatsDataExtractor():
         
         return _dict
 
-
-    def get_fixed_totalizers(self): # ATTENTION! NAMES are identifiers here, not Numbers! Consider this
-                                    # Include VOID
+    def get_fixed_totalizers(self):  # ATTENTION! NAMES are identifiers here, not Numbers! Consider this
+                                     # Include VOID
         _dict = {}
         _dict = gross_net_fill_values(_dict)
 
@@ -234,8 +232,6 @@ class StatsDataExtractor():
 
         return _dict
 
-
-
     def get_plu_sales_data(self):
         """
         Get PLU sales
@@ -259,12 +255,17 @@ class StatsDataExtractor():
 
         return _dict
 
-
     def get_last_100_sales(self):
         """
         Get last 100 sales
         """
-        orders = self.session.query(Order).order_by(Order.date_time.desc()).all()  # add timelines here
+        orders = self.session.query(Order).filter(and_(
+            Order.org_id == self.org_id,
+            Order.date_time >= self.start_time,
+            Order.date_time <= self.end_time
+        )
+        ).order_by(Order.date_time.desc()).all()  # add timelines here
+
         if len(orders) > 100:
             orders = orders[:100]
 
@@ -273,7 +274,7 @@ class StatsDataExtractor():
         for order in orders:
             date_time = order.date_time
             sale_id = order.id
-            site = "Some restaurant"
+            site = self.session.query(Organization).filter_by(id=self.org_id).first().name
             sales_total = 0
             
             for item in order.items:
@@ -289,7 +290,6 @@ class StatsDataExtractor():
 
         return _dict
 
-
     def get_clerks_breakdown(self):
         """
         Get Clerks breakdown sales
@@ -304,7 +304,6 @@ class StatsDataExtractor():
             _dict = dict_write_values(_dict, clerk_id, clerk_name, price, qty)
 
         return _dict
-
 
     def get_group_sales_data(self):
         """
@@ -328,7 +327,6 @@ class StatsDataExtractor():
             _dict = dict_write_values(_dict, group_id, group_name, price, qty)
 
         return _dict
-
 
     def get_free_func(self):
         """
