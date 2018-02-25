@@ -1,0 +1,35 @@
+{% extends "admin_panel/base.html" %}
+
+{% block content %}
+<div class="add-record-block col-lg-12">
+    <h4>Edit organization {{ org.name }}</h4>
+    <form action="" method="post" class="form-horizontal" role="form">
+        {{ form.hidden_tag() }}
+        <div class="form-group">
+            {{ form.name.label(class="col-lg-2") }}
+            <div class="col-lg-5">{{ form.name(size=32, class="form-control", value=org.name) }}</div>
+            {% for error in form.name.errors %}
+            <span class="error">{{ error }}</span>
+            {% endfor %}
+        </div>
+        <div class="form-group">
+            {{ form.data_dir.label(class="col-lg-2") }}
+            <div class="col-lg-5">{{ form.data_dir(size=32, class="form-control", value=org.data_dir) }}</div>
+            {% for error in form.data_dir.errors %}
+            <span class="error">{{ error }}</span>
+            {% endfor %}
+        </div>
+        <div class="form-group">
+            {{ form.users.label(class="col-lg-2") }}
+            <div class="col-lg-5">{{ form.users(class="form-control") }}</div>
+            {% for error in form.users.errors %}
+            <span class="error">{{ error }}</span>
+            {% endfor %}
+        </div>
+        <div class="submit-panel">
+            {{ form.submit(class="btn btn-success") }}
+            <a class="btn btn-danger" href="{{ url_for("admin.list_organizations") }}">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

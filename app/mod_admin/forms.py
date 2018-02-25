@@ -53,10 +53,7 @@ class UserCreateForm(UserInfoForm, EmailForm, PasswordForm):
         return True
 
 
-class OrgCreateForm(FlaskForm):
-    """
-    Create form for an organization
-    """
+class OrgInfoForm(FlaskForm):
     name = StringField('Organization Name', validators=[DataRequired()])
     data_dir = StringField('Data directory', validators=[DataRequired()])
     users = SelectMultipleField('Users',
@@ -64,6 +61,12 @@ class OrgCreateForm(FlaskForm):
                                 option_widget=widgets.CheckboxInput(),
                                 coerce=int)
     submit = SubmitField('Save')
+
+
+class OrgCreateForm(OrgInfoForm):
+    """
+    Create form for an organization
+    """
 
     def __init__(self, *args, **kwargs):
         FlaskForm.__init__(self, *args, **kwargs)

@@ -4,7 +4,7 @@ from flask_login import current_user
 from app import session_maker
 from app.models import Organization
 from app.mod_auth.models import User
-from app.mod_admin.forms import OrgCreateForm, UserCreateForm, UserInfoForm, EmailForm, PasswordForm
+from app.mod_admin.forms import OrgInfoForm, OrgCreateForm, UserCreateForm, UserInfoForm, EmailForm, PasswordForm
 
 # define Blueprint for admin module
 mod_admin = Blueprint('admin', __name__, url_prefix='/admin_panel')
@@ -163,7 +163,28 @@ def add_organization():
 
 @mod_admin.route("/edit_organization/<org_id>", methods=["GET", "POST"])
 def edit_organization(org_id):
-    pass
+    form = OrgInfoForm()
+    session = session_maker()
+    users = session.query(User).all()
+    form.users.choices = [(user.id, user.email) for user in users]
+    org = session.query(Organization).filter_by(id=org_id).first()
+
+    if form.validate_on_submit():
+        org.name = form.name.data
+        org.data_dir = form.data_dir.data
+        users = []
+
+        for user_id in form.users.data:
+            user = session.query(User).filter_by(id=user_id).first()
+            users.append(user)
+
+        org.users = users
+        session.commit()
+        session.close()
+
+        return redirect(url_for("admin.list_organizations"))
+
+    return render_template("admin_panel/edit_organization.html", form=form, org=org)
 
 
 @mod_admin.route("/delete_organization/<org_id>", methods=["GET", "POST"])
