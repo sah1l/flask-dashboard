@@ -38,27 +38,29 @@
         </div>
 
         <!-- Organization's title -->
-        <div id="organization-name">
-            <h5>Show data for: {{ organization_name }}</h5>
-        </div>
+        <div id="statistics-data">
+            <div id="organization-name">
+                <h4>Show data for: {{ organization_name }}</h4>
+            </div>
 
-        <!-- Table blocks -->
-        <div class="row">
-            {% include "stats/department_sales_table.html" %}
-            {% include "stats/fixed_totals_table.html" %}
-            {% include "stats/plu_sales_table.html" %}
+            <!-- Table blocks -->
+            <div class="row">
+                {% include "stats/department_sales_table.html" %}
+                {% include "stats/fixed_totals_table.html" %}
+                {% include "stats/plu_sales_table.html" %}
+            </div>
+            <div class="row">
+                {% include "stats/last_100_sales_table.html" %}
+                {% include "stats/clerks_breakdown_table.html" %}
+                {% include "stats/group_sales_total_table.html" %}
+            </div>
+            <div class="row">
+                {% include "stats/free_function_table.html" %}
+            </div>
+        {% else %}
+            <!-- User doesn't have organizations -->
+            <div class="error-message">{{ error_message }}</div>
+        {% endif %}
         </div>
-        <div class="row">
-            {% include "stats/last_100_sales_table.html" %}
-            {% include "stats/clerks_breakdown_table.html" %}
-            {% include "stats/group_sales_total_table.html" %}
-        </div>
-        <div class="row">
-            {% include "stats/free_function_table.html" %}
-        </div>
-    {% else %}
-        <!-- User doesn't have organizations -->
-        <div class="error-message">{{ error_message }}</div>
-    {% endif %}
     </div>
 {% endblock %}
