@@ -8,7 +8,7 @@ from app import session_maker
 from app.models import Organization
 from app.mod_auth.models import User
 from app.mod_stats.stats_utils import StatsDataExtractor, calc_quarter_timerange
-from app.mod_stats.forms import CustomizeStatsForm
+from app.mod_stats.forms import CustomizeStatsForm, CustomTimeSliceForm
 
 
 # define Blueprint for statistics module
@@ -475,6 +475,17 @@ def show_last_quarter(org_id):
         org_id = form.organization.data
         return redirect(url_for("stats.show_last_quarter", org_id=org_id))
 
+    dt_form = CustomTimeSliceForm()
+
+    if dt_form.validate_on_submit():
+        start_date = dt_form.start_date.data
+        end_date = dt_form.end_date.data
+
+        return redirect(url_for("stats.show_custom_datetime",
+                                org_id=org_id,
+                                start_date=start_date,
+                                end_date=end_date))
+
     return render_template("stats/base.html",
                            department_sales_data=department_sales_data,
                            fixed_totalizer_data=fixed_totalizers_data,
@@ -484,5 +495,68 @@ def show_last_quarter(org_id):
                            group_sales_total_data=group_sales_total_data,
                            free_function_data=free_function_data,
                            form=form,
+                           dt_form=dt_form,
+                           organization_name=org_name
+                           )
+
+@mod_stats.route("/<org_id>/<start_date>_<end_date>", methods=["GET", "POST"])
+def show_custom_datetime(org_id, start_date, end_date):
+    """
+    Shows data depending on custom time chosen by user
+    """
+    print(start_date)
+    print(end_date)
+    session = session_maker()
+    user = session.query(User).filter_by(id=current_user.id).first()
+
+    if not user.organizations:
+        return render_template("stats/base.html", error_message="You do not have any organizations yet.")
+
+    # fix this
+    if org_id == 0:
+        org_id = user.organizations[0].id
+
+    data_handler = StatsDataExtractor(org_id, start_date, end_date)
+
+    department_sales_data = data_handler.get_department_sales_data()
+    fixed_totalizers_data = data_handler.get_fixed_totalizers()
+    plu_sales_data = data_handler.get_plu_sales_data()
+    last_100_sales_data = data_handler.get_last_100_sales()
+    clerks_breakdown_data = data_handler.get_clerks_breakdown()
+    group_sales_total_data = data_handler.get_group_sales_data()
+    free_function_data = data_handler.get_free_func()
+
+    data_handler.close_session()
+    form = CustomizeStatsForm()
+    orgs = user.organizations
+    form.organization.choices = [(org.id, org.name) for org in orgs]
+    org_name = session.query(Organization).filter_by(id=org_id).first().name
+    session.close()
+
+    if form.validate_on_submit():
+        org_id = form.organization.data
+        return redirect(url_for("stats.show_last_quarter", org_id=org_id))
+
+    dt_form = CustomTimeSliceForm()
+
+    if dt_form.validate_on_submit():
+        start_date = dt_form.start_date.data
+        end_date = dt_form.end_date.data
+
+        return redirect(url_for("stats.show_custom_datetime",
+                                org_id=org_id,
+                                start_date=start_date,
+                                end_date=end_date))
+
+    return render_template("stats/base.html",
+                           department_sales_data=department_sales_data,
+                           fixed_totalizer_data=fixed_totalizers_data,
+                           plu_sales_data=plu_sales_data,
+                           last_100_sales_data=last_100_sales_data,
+                           clerks_breakdown_data=clerks_breakdown_data,
+                           group_sales_total_data=group_sales_total_data,
+                           free_function_data=free_function_data,
+                           form=form,
+                           dt_form=dt_form,
                            organization_name=org_name
                            )

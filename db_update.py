@@ -441,22 +441,29 @@ if __name__ == "__main__":
         if not org_id:
             print('org with dir {} was not found'.format(org_dir))
             continue
+
         db_insert = DBInsert(session_maker, org_data_path, org_id)
         db_insert.create_all_tables(db)
 
-        db_insert.insert_fixed_totalizer()
-        db_insert.insert_free_function()
-        db_insert.insert_group()
-        db_insert.insert_departments()
-        db_insert.insert_mixmatch()
-        db_insert.insert_taxes()
-        db_insert.insert_plu()
-        db_insert.insert_plu_2nd()
-        db_insert.insert_clerks()
-        db_insert.insert_customers()
-        db_insert.insert_order_data()
+        try:
+            db_insert.insert_fixed_totalizer()
+            db_insert.insert_free_function()
+            db_insert.insert_group()
+            db_insert.insert_departments()
+            db_insert.insert_mixmatch()
+            db_insert.insert_taxes()
+            db_insert.insert_plu()
+            db_insert.insert_plu_2nd()
+            db_insert.insert_clerks()
+            db_insert.insert_customers()
+            db_insert.insert_order_data()
+
+        except Exception as e:
+            print(e)
 
         db_insert.close_session()
+
+        print("processed successfully")
 
     # session = session_maker()
     # user = User(username="admin", email="admin@mail.com", is_admin=True)
