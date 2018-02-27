@@ -45,7 +45,7 @@
                             <div class="form-group col-lg-4">
                                 {{ dt_form.start_date.label }}
                                 {{ dt_form.start_date(class="form-control") }}
-                                {% for error in dt_form.end_date.errors %}
+                                {% for error in dt_form.start_date.errors %}
                                     <span class="error">{{ error }}</span>
                                 {% endfor %}
                             </div>
