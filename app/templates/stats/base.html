@@ -9,12 +9,12 @@
             <div class="row" id="stats-panel-row">
                 <div class="col-lg-3 col-md-3 col-sm-12 col-xs-12" id="customize-request">
                     <form action="" method="post" class="form-horizontal" role="form" id="customize-request-form">
-                        {{ form.hidden_tag() }}
+                        {{ org_form.hidden_tag() }}
                         <div class="form-group">
-                            {{ form.organization.label }}
-                            {{ form.organization(class="form-control", id="select-organization") }}
+                            {{ org_form.organization.label }}
+                            {{ org_form.organization(class="form-control", id="select-organization") }}
                         </div>
-                        {{ form.submit(class="btn btn-secondary") }}
+                        {{ org_form.submit(class="btn btn-secondary") }}
                     </form>
                 </div>
 

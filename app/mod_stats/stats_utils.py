@@ -18,6 +18,24 @@ FREE_FUNC_ITEM_TYPE = 1
 PLU2ND_ITEM_TYPE = 3
 
 
+def calc_today_timeframe():
+    """
+    Return timeframes for today
+    Start: <today> 00:00:00
+    End: <today> 23:59:59
+    :return: datetime object for starting point, datetime object for ending point
+    """
+    now_time = datetime.datetime.utcnow()
+    start_time = now_time.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_time = now_time.replace(hour=23, minute=59, second=59)
+
+    return start_time, end_time
+
+
+def calc_yesterday_timeframe():
+    pass
+
+
 def calc_quarter_timerange(quarter, year):
     """
     Calculates months range for given quarter value (1 - 4)

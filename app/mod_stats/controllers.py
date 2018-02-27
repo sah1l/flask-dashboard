@@ -2,12 +2,13 @@ import datetime
 from dateutil.relativedelta import relativedelta
 from flask import Blueprint, render_template, url_for, redirect
 from flask_login import current_user
+from flask.views import View
 from sqlalchemy.exc import OperationalError
 
 from app import session_maker
 from app.models import Organization
 from app.mod_auth.models import User
-from app.mod_stats.stats_utils import StatsDataExtractor, calc_quarter_timerange
+from app.mod_stats.stats_utils import StatsDataExtractor, calc_today_timeframe, calc_quarter_timerange
 from app.mod_stats.forms import CustomizeStatsForm, CustomTimeSliceForm
 
 
@@ -30,6 +31,100 @@ def handle_operational_error(error):
     Handles situation when there's no connection with database
     """
     return "No connection with database"
+
+
+class ShowDataView(View):
+    """
+    Generic class that gives data according to given timelines
+    """
+    methods = ['GET', 'POST']
+
+    def __init__(self, org_id, start_datetime, end_datetime):
+        # self.org_id = org_id
+        # self.start_datetime = start_datetime
+        # self.end_datetime = end_datetime
+        self.session = session_maker()
+        self.context = {}
+
+    def make_template_context(self, org_id, start_datetime, end_datetime):
+        self.context = {
+            "org_id": org_id,
+            "start_datetime": start_datetime,
+            "end_datetime": end_datetime
+        }
+
+    def check_org_id(self, user):
+        """
+        Dashboard URL in left panel doesn't know which organizations are assigned to the user
+        0 is generated automatically
+
+        :param: user object
+        """
+        if self.org_id == 0:
+            self.org_id = user.organizations[0].id
+
+    def dispatch_request(self, org_id, start_datetime, end_datetime):
+        self.make_template_context(org_id, start_datetime, end_datetime)
+
+        print(self.org_id)
+        user = self.session.query(User).filter_by(id=current_user.id).first()
+
+        # user does not have any organizations
+        if not user.organizations:
+            return render_template("stats/base.html", error_message="You do not have any organizations yet.")
+
+        self.check_org_id(user)
+
+        # getting statistics data
+        data_handler = StatsDataExtractor(self.org_id, self.start_datetime, self.end_datetime)
+        department_sales_data = data_handler.get_department_sales_data()
+        fixed_totalizers_data = data_handler.get_fixed_totalizers()
+        plu_sales_data = data_handler.get_plu_sales_data()
+        last_100_sales_data = data_handler.get_last_100_sales()
+        clerks_breakdown_data = data_handler.get_clerks_breakdown()
+        group_sales_total_data = data_handler.get_group_sales_data()
+        free_function_data = data_handler.get_free_func()
+        data_handler.close_session()
+
+        # choose organization form
+        org_form = CustomizeStatsForm()
+        orgs = user.organizations
+        org_form.organization.choices = [(org.id, org.name) for org in orgs]
+        org_name = self.session.query(Organization).filter_by(id=self.org_id).first().name
+
+        self.session.close()
+
+        # if org_form.validate_on_submit():
+        #     new_org_id = org_form.organization.data
+        #     return redirect(url_for("stats.", org_id=new_org_id)) ############################################
+
+        # custom timeline form
+        dt_form = CustomTimeSliceForm()
+
+        if dt_form.validate_on_submit():
+            new_start_datetime = dt_form.start_date.data
+            new_end_datetime = dt_form.end_date.data
+
+            return redirect(url_for("stats.show_custom_datetime",
+                                    org_id=self.org_id,
+                                    start_date=new_start_datetime,
+                                    end_date=new_end_datetime))
+
+        return render_template("stats/base.html",
+                               department_sales_data=department_sales_data,
+                               fixed_totalizer_data=fixed_totalizers_data,
+                               plu_sales_data=plu_sales_data,
+                               last_100_sales_data=last_100_sales_data,
+                               clerks_breakdown_data=clerks_breakdown_data,
+                               group_sales_total_data=group_sales_total_data,
+                               free_function_data=free_function_data,
+                               org_form=org_form,
+                               dt_form=dt_form,
+                               organization_name=org_name
+                               )
+
+
+# mod_stats.add_url_rule('/<org_id>/today', view_func=ShowDataView.as_view('show_today'))
 
 
 @mod_stats.route("/<org_id>", methods=["GET", "POST"])
@@ -62,15 +157,26 @@ def show_today(org_id):
     free_function_data = data_handler.get_free_func()
 
     data_handler.close_session()
-    form = CustomizeStatsForm()
+    org_form = CustomizeStatsForm()
     orgs = user.organizations
-    form.organization.choices = [(org.id, org.name) for org in orgs]
+    org_form.organization.choices = [(org.id, org.name) for org in orgs]
     org_name = session.query(Organization).filter_by(id=org_id).first().name
     session.close()
 
-    if form.validate_on_submit():
-        org_id = form.organization.data
+    if org_form.validate_on_submit():
+        org_id = org_form.organization.data
         return redirect(url_for("stats.show_today", org_id=org_id))
+
+    dt_form = CustomTimeSliceForm()
+
+    if dt_form.validate_on_submit():
+        start_date = dt_form.start_date.data
+        end_date = dt_form.end_date.data
+
+        return redirect(url_for("stats.show_custom_datetime",
+                                org_id=org_id,
+                                start_date=start_date,
+                                end_date=end_date))
 
     return render_template("stats/base.html",
                            group_sales_total_data=group_sales_total_data,
@@ -80,7 +186,8 @@ def show_today(org_id):
                            last_100_sales_data=last_100_sales_data,
                            clerks_breakdown_data=clerks_breakdown_data,
                            free_function_data=free_function_data,
-                           form=form,
+                           org_form=org_form,
+                           dt_form=dt_form,
                            organization_name=org_name
                            )
 
@@ -115,15 +222,26 @@ def show_yesterday(org_id):
     free_function_data = data_handler.get_free_func()
 
     data_handler.close_session()
-    form = CustomizeStatsForm()
+    org_form = CustomizeStatsForm()
     orgs = user.organizations
-    form.organization.choices = [(org.id, org.name) for org in orgs]
+    org_form.organization.choices = [(org.id, org.name) for org in orgs]
     org_name = session.query(Organization).filter_by(id=org_id).first().name
     session.close()
 
-    if form.validate_on_submit():
-        org_id = form.organization.data
+    if org_form.validate_on_submit():
+        org_id = org_form.organization.data
         return redirect(url_for("stats.show_yesterday", org_id=org_id))
+
+    dt_form = CustomTimeSliceForm()
+
+    if dt_form.validate_on_submit():
+        start_date = dt_form.start_date.data
+        end_date = dt_form.end_date.data
+
+        return redirect(url_for("stats.show_custom_datetime",
+                                org_id=org_id,
+                                start_date=start_date,
+                                end_date=end_date))
 
     return render_template("stats/base.html",
                            group_sales_total_data=group_sales_total_data,
@@ -133,7 +251,8 @@ def show_yesterday(org_id):
                            last_100_sales_data=last_100_sales_data,
                            clerks_breakdown_data=clerks_breakdown_data,
                            free_function_data=free_function_data,
-                           form=form,
+                           org_form=org_form,
+                           dt_form=dt_form,
                            organization_name=org_name
                            )
 
@@ -176,15 +295,26 @@ def show_this_week(org_id):
     free_function_data = data_handler.get_free_func()
 
     data_handler.close_session()
-    form = CustomizeStatsForm()
+    org_form = CustomizeStatsForm()
     orgs = user.organizations
-    form.organization.choices = [(org.id, org.name) for org in orgs]
+    org_form.organization.choices = [(org.id, org.name) for org in orgs]
     org_name = session.query(Organization).filter_by(id=org_id).first().name
     session.close()
 
-    if form.validate_on_submit():
-        org_id = form.organization.data
+    if org_form.validate_on_submit():
+        org_id = org_form.organization.data
         return redirect(url_for("stats.show_this_week", org_id=org_id))
+
+    dt_form = CustomTimeSliceForm()
+
+    if dt_form.validate_on_submit():
+        start_date = dt_form.start_date.data
+        end_date = dt_form.end_date.data
+
+        return redirect(url_for("stats.show_custom_datetime",
+                                org_id=org_id,
+                                start_date=start_date,
+                                end_date=end_date))
 
     return render_template("stats/base.html",
                            group_sales_total_data=group_sales_total_data,
@@ -194,7 +324,8 @@ def show_this_week(org_id):
                            last_100_sales_data=last_100_sales_data,
                            clerks_breakdown_data=clerks_breakdown_data,
                            free_function_data=free_function_data,
-                           form=form,
+                           org_form=org_form,
+                           dt_form=dt_form,
                            organization_name=org_name
                            )
 
@@ -237,15 +368,26 @@ def show_last_week(org_id):
     free_function_data = data_handler.get_free_func()
 
     data_handler.close_session()
-    form = CustomizeStatsForm()
+    org_form = CustomizeStatsForm()
     orgs = user.organizations
-    form.organization.choices = [(org.id, org.name) for org in orgs]
+    org_form.organization.choices = [(org.id, org.name) for org in orgs]
     org_name = session.query(Organization).filter_by(id=org_id).first().name
     session.close()
 
-    if form.validate_on_submit():
-        org_id = form.organization.data
+    if org_form.validate_on_submit():
+        org_id = org_form.organization.data
         return redirect(url_for("stats.show_last_week", org_id=org_id))
+
+    dt_form = CustomTimeSliceForm()
+
+    if dt_form.validate_on_submit():
+        start_date = dt_form.start_date.data
+        end_date = dt_form.end_date.data
+
+        return redirect(url_for("stats.show_custom_datetime",
+                                org_id=org_id,
+                                start_date=start_date,
+                                end_date=end_date))
 
     return render_template("stats/base.html",
                            group_sales_total_data=group_sales_total_data,
@@ -255,7 +397,8 @@ def show_last_week(org_id):
                            last_100_sales_data=last_100_sales_data,
                            clerks_breakdown_data=clerks_breakdown_data,
                            free_function_data=free_function_data,
-                           form=form,
+                           org_form=org_form,
+                           dt_form=dt_form,
                            organization_name=org_name
                            )
 
@@ -297,15 +440,26 @@ def show_this_month(org_id):
     free_function_data = data_handler.get_free_func()
 
     data_handler.close_session()
-    form = CustomizeStatsForm()
+    org_form = CustomizeStatsForm()
     orgs = user.organizations
-    form.organization.choices = [(org.id, org.name) for org in orgs]
+    org_form.organization.choices = [(org.id, org.name) for org in orgs]
     org_name = session.query(Organization).filter_by(id=org_id).first().name
     session.close()
 
-    if form.validate_on_submit():
-        org_id = form.organization.data
+    if org_form.validate_on_submit():
+        org_id = org_form.organization.data
         return redirect(url_for("stats.show_this_month", org_id=org_id))
+
+    dt_form = CustomTimeSliceForm()
+
+    if dt_form.validate_on_submit():
+        start_date = dt_form.start_date.data
+        end_date = dt_form.end_date.data
+
+        return redirect(url_for("stats.show_custom_datetime",
+                                org_id=org_id,
+                                start_date=start_date,
+                                end_date=end_date))
 
     return render_template("stats/base.html",
                            group_sales_total_data=group_sales_total_data,
@@ -315,7 +469,8 @@ def show_this_month(org_id):
                            last_100_sales_data=last_100_sales_data,
                            clerks_breakdown_data=clerks_breakdown_data,
                            free_function_data=free_function_data,
-                           form=form,
+                           org_form=org_form,
+                           dt_form=dt_form,
                            organization_name=org_name
                            )
 
@@ -359,15 +514,26 @@ def show_last_month(org_id):
     free_function_data = data_handler.get_free_func()
 
     data_handler.close_session()
-    form = CustomizeStatsForm()
+    org_form = CustomizeStatsForm()
     orgs = user.organizations
-    form.organization.choices = [(org.id, org.name) for org in orgs]
+    org_form.organization.choices = [(org.id, org.name) for org in orgs]
     org_name = session.query(Organization).filter_by(id=org_id).first().name
     session.close()
 
-    if form.validate_on_submit():
-        org_id = form.organization.data
+    if org_form.validate_on_submit():
+        org_id = org_form.organization.data
         return redirect(url_for("stats.show_last_month", org_id=org_id))
+
+    dt_form = CustomTimeSliceForm()
+
+    if dt_form.validate_on_submit():
+        start_date = dt_form.start_date.data
+        end_date = dt_form.end_date.data
+
+        return redirect(url_for("stats.show_custom_datetime",
+                                org_id=org_id,
+                                start_date=start_date,
+                                end_date=end_date))
 
     return render_template("stats/base.html",
                            group_sales_total_data=group_sales_total_data,
@@ -377,7 +543,8 @@ def show_last_month(org_id):
                            last_100_sales_data=last_100_sales_data,
                            clerks_breakdown_data=clerks_breakdown_data,
                            free_function_data=free_function_data,
-                           form=form,
+                           org_form=org_form,
+                           dt_form=dt_form,
                            organization_name=org_name
                            )
 
@@ -412,15 +579,26 @@ def show_this_quarter(org_id):
     free_function_data = data_handler.get_free_func()
 
     data_handler.close_session()
-    form = CustomizeStatsForm()
+    org_form = CustomizeStatsForm()
     orgs = user.organizations
-    form.organization.choices = [(org.id, org.name) for org in orgs]
+    org_form.organization.choices = [(org.id, org.name) for org in orgs]
     org_name = session.query(Organization).filter_by(id=org_id).first().name
     session.close()
 
-    if form.validate_on_submit():
-        org_id = form.organization.data
+    if org_form.validate_on_submit():
+        org_id = org_form.organization.data
         return redirect(url_for("stats.show_this_quarter", org_id=org_id))
+
+    dt_form = CustomTimeSliceForm()
+
+    if dt_form.validate_on_submit():
+        start_date = dt_form.start_date.data
+        end_date = dt_form.end_date.data
+
+        return redirect(url_for("stats.show_custom_datetime",
+                                org_id=org_id,
+                                start_date=start_date,
+                                end_date=end_date))
 
     return render_template("stats/base.html",
                            group_sales_total_data=group_sales_total_data,
@@ -430,7 +608,8 @@ def show_this_quarter(org_id):
                            last_100_sales_data=last_100_sales_data,
                            clerks_breakdown_data=clerks_breakdown_data,
                            free_function_data=free_function_data,
-                           form=form,
+                           org_form=org_form,
+                           dt_form=dt_form,
                            organization_name=org_name
                            )
 
@@ -465,14 +644,14 @@ def show_last_quarter(org_id):
     free_function_data = data_handler.get_free_func()
 
     data_handler.close_session()
-    form = CustomizeStatsForm()
+    org_form = CustomizeStatsForm()
     orgs = user.organizations
-    form.organization.choices = [(org.id, org.name) for org in orgs]
+    org_form.organization.choices = [(org.id, org.name) for org in orgs]
     org_name = session.query(Organization).filter_by(id=org_id).first().name
     session.close()
 
-    if form.validate_on_submit():
-        org_id = form.organization.data
+    if org_form.validate_on_submit():
+        org_id = org_form.organization.data
         return redirect(url_for("stats.show_last_quarter", org_id=org_id))
 
     dt_form = CustomTimeSliceForm()
@@ -494,7 +673,7 @@ def show_last_quarter(org_id):
                            clerks_breakdown_data=clerks_breakdown_data,
                            group_sales_total_data=group_sales_total_data,
                            free_function_data=free_function_data,
-                           form=form,
+                           org_form=org_form,
                            dt_form=dt_form,
                            organization_name=org_name
                            )
@@ -527,14 +706,14 @@ def show_custom_datetime(org_id, start_date, end_date):
     free_function_data = data_handler.get_free_func()
 
     data_handler.close_session()
-    form = CustomizeStatsForm()
+    org_form = CustomizeStatsForm()
     orgs = user.organizations
-    form.organization.choices = [(org.id, org.name) for org in orgs]
+    org_form.organization.choices = [(org.id, org.name) for org in orgs]
     org_name = session.query(Organization).filter_by(id=org_id).first().name
     session.close()
 
-    if form.validate_on_submit():
-        org_id = form.organization.data
+    if org_form.validate_on_submit():
+        org_id = org_form.organization.data
         return redirect(url_for("stats.show_last_quarter", org_id=org_id))
 
     dt_form = CustomTimeSliceForm()
@@ -556,7 +735,7 @@ def show_custom_datetime(org_id, start_date, end_date):
                            clerks_breakdown_data=clerks_breakdown_data,
                            group_sales_total_data=group_sales_total_data,
                            free_function_data=free_function_data,
-                           form=form,
+                           org_form=org_form,
                            dt_form=dt_form,
                            organization_name=org_name
                            )
