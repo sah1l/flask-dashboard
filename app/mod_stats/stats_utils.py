@@ -5,6 +5,7 @@ Only reads database.
 """
 
 import datetime
+from dateutil.relativedelta import relativedelta
 from decimal import Decimal, ROUND_HALF_UP
 from sqlalchemy import and_
 from sqlalchemy.orm import sessionmaker
@@ -20,7 +21,7 @@ PLU2ND_ITEM_TYPE = 3
 
 def calc_today_timeframe():
     """
-    Return timeframes for today
+    Return timeframes for "today"
     Start: <today> 00:00:00
     End: <today> 23:59:59
     :return: datetime object for starting point, datetime object for ending point
@@ -33,11 +34,107 @@ def calc_today_timeframe():
 
 
 def calc_yesterday_timeframe():
-    pass
-
-
-def calc_quarter_timerange(quarter, year):
     """
+    Return timeframes for "yesterday"
+    Start: <yesterday> 00:00:00
+    End: <yesterday> 23:59:59
+    :return: datetime object for starting point, datetime object for ending point
+    """
+    yesterday = datetime.datetime.utcnow() - datetime.timedelta(days=1)
+    end_time = yesterday.replace(hour=23, minute=59, second=59, microsecond=0)  # 23:59:59 of the day
+    start_time = end_time - datetime.timedelta(days=1) + datetime.timedelta(seconds=1)  # 00:00:00 of the day
+
+    return start_time, end_time
+
+
+def calc_this_week_timeframe():
+    """
+    Return timeframes for "this week"
+    Start: Monday of <current week> 00:00:00
+    End: Sunday of <current week> 23:59:59
+    :return: datetime object for starting point, datetime object for ending point
+    """
+    curr_weekday = datetime.datetime.utcnow()
+
+    for day in range(7):
+        end_weekday = curr_weekday + datetime.timedelta(days=day)
+        if end_weekday.weekday() == 6:
+            break
+
+    end_weekday = end_weekday.replace(hour=23, minute=59, second=59)
+    start_weekday = end_weekday - datetime.timedelta(days=6)
+    start_weekday = start_weekday.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    return start_weekday, end_weekday
+
+
+def calc_last_week_timeframe():
+    """
+    Return timeframes for "last week"
+    Start: Monday of <last week> 00:00:00
+    End: Sunday of <last week> 23:59:59
+    :return: datetime object for starting point, datetime object for ending point
+    """
+    last_weekday = datetime.datetime.utcnow() - datetime.timedelta(days=7)
+
+    for day in range(7):
+        start_weekday = last_weekday - datetime.timedelta(days=day)
+        if start_weekday.weekday() == 0:
+            break
+
+    start_weekday = start_weekday.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_weekday = start_weekday + datetime.timedelta(days=6)
+    end_weekday = end_weekday.replace(hour=23, minute=59, second=59)
+
+    return start_weekday, end_weekday
+
+
+def calc_this_month_timeframe():
+    """
+    Return timeframe for "this month"
+    Start: First day of <current month> 00:00:00
+    End: Last day of <current month> 23:59:59
+    :return: datetime object for starting point, datetime object for ending point
+    """
+    today = datetime.datetime.utcnow()
+    curr_month = today.month
+
+    for day in range(31):
+        end_month_day = today + datetime.timedelta(days=day)
+        if end_month_day.month != curr_month:
+            end_month_day = end_month_day - datetime.timedelta(days=1)
+            end_month_day = end_month_day.replace(hour=23, minute=59, second=59)
+            break
+
+    start_month_day = today.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    return start_month_day, end_month_day
+
+
+def calc_last_month_timeframe():
+    """
+    Return timeframe for "last month"
+    Start: First day of <last month> 00:00:00
+    End: Last day of <last month> 23:59:59
+    :return: datetime object for starting point, datetime object for ending point
+    """
+    last_month_day = datetime.datetime.utcnow() - relativedelta(months=1)
+    last_month = last_month_day.month
+    start_last_month_day = last_month_day.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    for day in range(31):
+        end_last_month_day = last_month_day + datetime.timedelta(days=day)
+        if end_last_month_day.month != last_month:
+            end_last_month_day = end_last_month_day - datetime.timedelta(days=1)
+            end_last_month_day = end_last_month_day.replace(hour=23, minute=59, second=59)
+            break
+
+    return start_last_month_day, end_last_month_day
+
+
+def match_dates_and_quarter(quarter, year):
+    """
+    Help function.
     Calculates months range for given quarter value (1 - 4)
 
     1 quarter: 01 of January - 31 of March
@@ -47,6 +144,8 @@ def calc_quarter_timerange(quarter, year):
     3 quarter: 01 of July - 30 of September
 
     4 quarter: 01 of October - 31 of December
+
+    :return: datetime object for starting point, datetime object for ending point (according to quarter)
     """
     if quarter == 1:
         start_month = datetime.datetime.strptime("01/01/{} 00:00:00".format(year), "%d/%m/%Y %H:%M:%S")
@@ -60,6 +159,36 @@ def calc_quarter_timerange(quarter, year):
     else:
         start_month = datetime.datetime.strptime("01/10/{} 00:00:00".format(year), "%d/%m/%Y %H:%M:%S")
         end_month = datetime.datetime.strptime("31/12/{} 23:59:59".format(year), "%d/%m/%Y %H:%M:%S")
+
+    return start_month, end_month
+
+
+def calc_this_quarter_timeframe():
+    """
+    Returns timeframe for <this quarter>
+    Start: 00:00:00 of <this quarter's start month>
+    End: 23:59:59 of <this quarter's end month>
+    :return: datetime object for starting point, datetime object for ending point
+    """
+    now_time = datetime.datetime.utcnow()
+    this_year = str(now_time.year)
+    this_quarter = (now_time.month - 1) // 3 + 1
+    start_month, end_month = match_dates_and_quarter(this_quarter, this_year)
+
+    return start_month, end_month
+
+
+def calc_last_quarter_timeframe():
+    """
+    Returns timeframe for <last quarter>
+    Start: 00:00:00 of <last quarter's start month>
+    End: 23:59:59 of <last quarter's end month>
+    :return: datetime object for starting point, datetime object for ending point
+    """
+    lq_time = datetime.datetime.utcnow() - relativedelta(months=3)
+    lq_year = str(lq_time.year)
+    last_quarter = (lq_time.month - 1) // 3 + 1
+    start_month, end_month = match_dates_and_quarter(last_quarter, lq_year)
 
     return start_month, end_month
 

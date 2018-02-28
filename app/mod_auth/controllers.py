@@ -28,7 +28,8 @@ def login():
         else:
             org_id = 0
         session.close()
-        return redirect(url_for('stats.show_today', org_id=org_id))
+        import datetime
+        return redirect(url_for('stats.show_last_quarter', org_id=org_id)) ################################
 
     form = LoginForm()
     if form.validate_on_submit():
