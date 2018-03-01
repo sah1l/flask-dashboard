@@ -3,6 +3,66 @@ import re
 import xml.etree.ElementTree as ET
 
 
+DATATYPES_NAMES = {
+    "fixed_totalizer": "Fixed Totaliser",
+    "free_function": "Free Function",
+    "group_name": "Group",
+    "department_name": "Department",
+    "plu_name": "PLU",
+    "plu2nd_name": "PLU 2nd",
+    "clerk_name": "Clerk",
+    "customer_name": "Customers",
+    "mixmatch_name": "Mix & Match",
+    "tax_name": "Tax table"
+}
+
+def check_group_dirs(org_data_path):
+    """
+    Checks whether organization directory contains Group directories
+    :param org_data_path: path for organization directory
+    :return: True if present, False if not present
+    """
+    content = os.listdir(org_data_path)
+    for item_name in content:
+        item_path = os.path.join(org_data_path, item_name)
+
+        # a directory found, check if this is a group directory
+        if os.path.isdir(item_path):
+            if "group" in item_name.lower():
+                return True
+
+    return False
+
+
+def check_master_files_dirs(org_data_path):
+    """
+    Checks whether Master Files directory is present anywhere in organization directory (in groups subdirectories)
+    And Master Files directory is not empty
+    :param org_data_path: path for organization directory
+    :return: True if present, False if not present
+    """
+    content = os.listdir(org_data_path)
+
+    # go through each item in organization directory
+    for item_name in content:
+        item_path = os.path.join(org_data_path, item_name)
+
+        if os.path.isdir(item_path):
+            group_dir_content = os.listdir(item_path)
+
+            # go through each item of a directory
+            for group_dir_item_name in group_dir_content:
+                group_dir_item_path = os.path.join(item_path, group_dir_item_name)
+
+                # master files directory found
+                if os.path.isdir(group_dir_item_path) and 'master files' in group_dir_item_name.lower():
+                    master_files_content = os.listdir(group_dir_item_path)
+                    if len(master_files_content) > 0:
+                        return True
+
+    return False
+
+
 def parse_xml(filename):
     """Return content of an XML file"""
     tree = ET.parse(filename)

@@ -54,8 +54,8 @@ class FixedTotalizer(Master):
     orderlines = relationship("OrderLine", back_populates="fixed_totalizer")
 
     def __repr__(self):
-        return "Fixed Totalizer: id=%s number=%s name=%s filepath=%s data_dir=%s" % (
-                self.id, self.number, self.name, self.filepath, self.data_dir)
+        return "Fixed Totalizer: id=%s number=%s name=%s" % (
+                self.id, self.number, self.name)
 
 
 class FreeFunction(Master):
@@ -67,8 +67,8 @@ class FreeFunction(Master):
     orderlines = relationship("OrderLine", back_populates="free_function")
 
     def __repr__(self):
-        return "Free Function: id=%s number=%s name=%s function_number=%s filepath=%s" % (
-                self.id, self.number, self.name, self.function_number, self.filepath)
+        return "Free Function: id=%s number=%s name=%s" % (
+                self.id, self.number, self.name)
 
 
 class Group(Master):
@@ -81,8 +81,8 @@ class Group(Master):
     plus_2nd = relationship("PLU2nd", back_populates="group")
 
     def __repr__(self):
-        return "Group: id=%s number=%s name=%s filepath=%s" % (
-                self.id, self.number, self.name, self.filepath)
+        return "Group: id=%s number=%s name=%s" % (
+                self.id, self.number, self.name)
 
 
 class Department(Master):
@@ -96,8 +96,8 @@ class Department(Master):
     plus_2nd = relationship("PLU2nd", back_populates="department")
 
     def __repr__(self):
-        return "Department: id=%s number=%s name=%s group_id=%s filepath=%s" % (
-                self.id, self.number, self.name, self.group_id, self.filepath)
+        return "Department: id=%s number=%s name=%s group_id=%s" % (
+                self.id, self.number, self.name, self.group_id)
 
 
 class MixMatch(Master):
@@ -111,8 +111,8 @@ class MixMatch(Master):
     plus = relationship("PLU", backref="plus", lazy="dynamic")
 
     def __repr__(self):
-        return "MixMatch: id=%s number=%s name=%s filepath=%s" % (
-            self.id, self.number, self.name, self.filepath)
+        return "MixMatch: id=%s number=%s name=%s" % (
+            self.id, self.number, self.name)
 
 
 class Tax(Master):
@@ -145,9 +145,8 @@ class PLU(Master):
     orderlines = relationship("OrderLine", backref="plu", lazy="dynamic")
 
     def __repr__(self):
-        return "PLU: id=%s name=%s number=%s group_number=%s department_number=%s price=%s filepath=%s" % (
-                self.id, self.name, self.number, self.group_id, self.department_id,
-                self.price, self.filepath)
+        return "PLU: id=%s name=%s number=%s group_number=%s department_number=%s price=%s" % (
+                self.id, self.name, self.number, self.group_id, self.department_id, self.price)
 
 
 class PLU2nd(Master):
@@ -165,9 +164,8 @@ class PLU2nd(Master):
     orderlines = relationship("OrderLine", backref="plu_2nd", lazy="dynamic")
 
     def __repr__(self):
-        return "PLU2nd: id=%s name=%s number=%s group_number=%s department_number=%s price=%s filepath=%s" % (
-                self.id, self.name, self.number, self.group_id, self.department_id,
-                self.price, self.filepath)
+        return "PLU2nd: id=%s name=%s number=%s group_number=%s department_number=%s price=%s" % (
+                self.id, self.name, self.number, self.group_id, self.department_id, self.price)
 
 
 class Clerk(Master):
@@ -178,8 +176,7 @@ class Clerk(Master):
     orders = relationship("Order", back_populates="clerk")
 
     def __repr__(self):
-        return "Clerk: id=%s name=%s filepath=%s" % (
-                self.number, self.name, self.filepath)
+        return "Clerk: id=%s name=%s" % (self.number, self.name)
 
 
 class Customer(Master):
@@ -199,8 +196,7 @@ class Customer(Master):
     orders = relationship("Order", backref="customer", lazy="dynamic")
 
     def __repr__(self):
-        return "Customer: id=%s first_name=%s surname=%s filepath=%s" % (
-                self.id, self.first_name, self.surname, self.filepath)
+        return "Customer: id=%s first_name=%s surname=%s" % (self.id, self.first_name, self.surname)
 
 
 class Order(base):
@@ -222,7 +218,7 @@ class Order(base):
     items = relationship("OrderLine", back_populates="order", cascade="all, delete-orphan")
 
     def __repr__(self):
-        return "Order: ID=%s filepath=%s" % (self.id, self.filepath)
+        return "Order: ID=%s" % (self.id)
 
 
 class OrderLine(base):

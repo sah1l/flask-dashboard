@@ -1,13 +1,15 @@
-import os
-
 from datetime import datetime
 
-from app.mod_db_manage.utils import parse_xml, get_xml_records, get_order_xml, get_mf_dir, get_mf_xml, check_tag_length
+from app.mod_db_manage.utils import *
 from app.mod_db_manage.config import DATA_DIR
 
 
 def get_orders_gen(org_path):
-    """Get orders data"""
+    """
+    Get orders data
+    :param org_path: path of Group directory with order XML files
+    :return: OrderData class object
+    """
     order_files_gen = get_order_xml(org_path)
 
     for of in order_files_gen:
@@ -16,7 +18,11 @@ def get_orders_gen(org_path):
 
 
 def get_order_items_gen(order_file):
-    """Get each order item"""
+    """
+    Get each order item
+    :param order_file: XML file from which order data will be extracted
+    :return: ItemData class object
+    """
     data = parse_xml(order_file)
     items = data.findall("Item")
 
@@ -24,271 +30,79 @@ def get_order_items_gen(order_file):
         yield ItemData(item)
 
 
-def get_fixed_total_gen(org_path):
-    """Get Fixed Totaliser data"""
+def choose_data_class(name):
+    """
+    Matches tag name with associated class
+    :param name: tag_name
+    :return: matching class or None
+    """
+    if name == DATATYPES_NAMES["fixed_totalizer"]:
+        return FixedTotalizerData
+    elif name == DATATYPES_NAMES["free_function"]:
+        return FreeFunctionData
+    elif name == DATATYPES_NAMES["group_name"]:
+        return GroupData
+    elif name == DATATYPES_NAMES["department_name"]:
+        return DepartmentData
+    elif name == DATATYPES_NAMES["plu_name"]:
+        return PLUData
+    elif name == DATATYPES_NAMES["plu2nd_name"]:
+        return PLU2ndData
+    elif name == DATATYPES_NAMES["clerk_name"]:
+        return ClerkData
+    elif name == DATATYPES_NAMES["customer_name"]:
+        return CustomerData
+    elif name == DATATYPES_NAMES["mixmatch_name"]:
+        return MixMatchData
+    elif name == DATATYPES_NAMES["tax_name"]:
+        return TaxData
+    else:
+        return None
+
+
+def extract_master_files_data(org_path, data_type_name):
+    """
+    Generic class for getting XML data
+    :param org_path: path of organization directory
+    :param data_type_name: name of data type needed (whether data should be searched for fixed totals, free functions etc.)
+    :return: <datatype> class object with parsed data
+    """
     group_dirs_names = os.listdir(org_path)
+
     for group_dir_name in group_dirs_names:
         mf_dir = get_mf_dir(org_path, group_dir_name)
         mf_xml_files = get_mf_xml(mf_dir)
 
+        # go through each master file in a directory
+        # if there are several master files that represent same data type, they all will be processed
         for mf_file in mf_xml_files:
-            data = parse_xml(os.path.join(mf_dir,mf_file))
+            data = parse_xml(os.path.join(mf_dir, mf_file))
             name_tag = data.find("Name").text
 
-            # fixed totaliser
-            if name_tag == "Fixed Totaliser":
+            if name_tag == data_type_name:
                 records = get_xml_records(data)
 
                 for record in records:
+                    # discard empty tags
+
+                    # special case for Customer data type
+                    if name_tag == DATATYPES_NAMES["customer_name"]:
+                        customer_fname = record.find("FirstName").text
+                        customer_sname = record.find("Surname").text
+
+                        if not check_tag_length(customer_fname) or not check_tag_length(customer_sname):
+                            continue
+                    # general way of getting record names
+                    else:
+                        record_name = record.find("Name").text
+
+                        if not check_tag_length(record_name):
+                            continue
+
                     path = os.path.join(mf_dir, mf_file)
-                    yield FixedTotalizerData(data, path, record)
+                    classname = choose_data_class(data_type_name)
 
-            else:
-                continue
-
-
-def get_free_func_gen(org_path):
-    """Get Free function data"""
-    group_dirs_names = os.listdir(org_path)
-    for group_dir_name in group_dirs_names:
-        mf_dir = get_mf_dir(org_path, group_dir_name)
-        mf_xml_files = get_mf_xml(mf_dir)
-
-        for mf_file in mf_xml_files:
-            data = parse_xml(os.path.join(mf_dir, mf_file))
-            name_tag = data.find("Name").text
-
-            if name_tag == "Free Function":
-                records = get_xml_records(data)
-
-                for record in records:
-                    ff_name = record.find("Name").text
-
-                    # discard empty tags
-                    if not check_tag_length(ff_name):
-                        continue
-
-                    path = mf_dir + mf_file
-                    yield FreeFunctionData(data, path, record)
-
-            else:
-                continue
-
-
-def get_group_gen(org_path):
-    """Get Group data"""
-    group_dirs_names = os.listdir(org_path)
-    for group_dir_name in group_dirs_names:
-        mf_dir = get_mf_dir(org_path, group_dir_name)
-        mf_xml_files = get_mf_xml(mf_dir)
-
-        for mf_file in mf_xml_files:
-            data = parse_xml(os.path.join(mf_dir, mf_file))
-            name_tag = data.find("Name").text
-
-            if name_tag == "Group":
-                records = get_xml_records(data)
-
-                for record in records:
-                    group_name = record.find("Name").text
-
-                    # discard empty tags
-                    if not check_tag_length(group_name):
-                        continue
-
-                    path = mf_dir + mf_file
-                    yield GroupData(data, path, record)
-
-            else:
-                continue
-
-
-def get_department_gen(org_path):
-    """Get Department data"""
-    group_dirs_names = os.listdir(org_path)
-    for group_dir_name in group_dirs_names:
-        mf_dir = get_mf_dir(org_path, group_dir_name)
-        mf_xml_files = get_mf_xml(mf_dir)
-
-        for mf_file in mf_xml_files:
-            data = parse_xml(os.path.join(mf_dir, mf_file))
-            name_tag = data.find("Name").text
-
-            if name_tag == "Department":
-                records = get_xml_records(data)
-
-                for record in records:
-                    dep_name = record.find("Name").text
-
-                    # discard empty tags
-                    if not check_tag_length(dep_name):
-                        continue
-
-                    path = mf_dir + mf_file
-                    yield DepartmentData(data, path, record)
-
-            else:
-                continue
-
-
-def get_plu_gen(org_path):
-    """Get PLU data"""
-    group_dirs_names = os.listdir(org_path)
-    for group_dir_name in group_dirs_names:
-        mf_dir = get_mf_dir(org_path, group_dir_name)
-        mf_xml_files = get_mf_xml(mf_dir)
-
-        for mf_file in mf_xml_files:
-            data = parse_xml(os.path.join(mf_dir, mf_file))
-            name_tag = data.find("Name").text
-
-            if name_tag == "PLU":
-                records = get_xml_records(data)
-
-                for record in records:
-                    plu_name = record.find("Name").text
-
-                    if not check_tag_length(plu_name):
-                        continue
-
-                    path = mf_dir + mf_file
-                    yield PLUData(data, path, record)
-
-            else:
-                continue
-
-
-def get_plu2nd_gen(org_path):
-    """Get PLU data"""
-    group_dirs_names = os.listdir(org_path)
-    for group_dir_name in group_dirs_names:
-        mf_dir = get_mf_dir(org_path, group_dir_name)
-        mf_xml_files = get_mf_xml(mf_dir)
-
-        for mf_file in mf_xml_files:
-            data = parse_xml(os.path.join(mf_dir, mf_file))
-            name_tag = data.find("Name").text
-
-            if name_tag == "PLU 2nd":
-                records = get_xml_records(data)
-
-                for record in records:
-                    plu_name = record.find("Name").text
-
-                    if not check_tag_length(plu_name):
-                        continue
-
-                    path = mf_dir + mf_file
-                    yield PLU2ndData(data, path, record)
-
-            else:
-                continue
-
-
-def get_clerk_gen(org_path):
-    """Get PLU data"""
-    group_dirs_names = os.listdir(org_path)
-    for group_dir_name in group_dirs_names:
-        mf_dir = get_mf_dir(org_path, group_dir_name)
-        mf_xml_files = get_mf_xml(mf_dir)
-
-        for mf_file in mf_xml_files:
-            data = parse_xml(os.path.join(mf_dir, mf_file))
-            name_tag = data.find("Name").text
-
-            if name_tag == "Clerk":
-                records = get_xml_records(data)
-
-                for record in records:
-                    clerk_name = record.find("Name").text
-
-                    if not check_tag_length(clerk_name):
-                        continue
-
-                    path = mf_dir + mf_file
-                    yield ClerkData(data, path, record)
-
-            else:
-                continue
-
-
-def get_customer_gen(org_path):
-    """Get PLU data"""
-    group_dirs_names = os.listdir(org_path)
-    for group_dir_name in group_dirs_names:
-        mf_dir = get_mf_dir(org_path, group_dir_name)
-        mf_xml_files = get_mf_xml(mf_dir)
-
-        for mf_file in mf_xml_files:
-            data = parse_xml(os.path.join(mf_dir, mf_file))
-            name_tag = data.find("Name").text
-
-            if name_tag == "Customers":
-                records = get_xml_records(data)
-
-                for record in records:
-                    customer_fname = record.find("FirstName").text
-                    customer_sname = record.find("Surname").text
-
-                    if not check_tag_length(customer_fname) or not check_tag_length(customer_sname):
-                        continue
-
-                    path = mf_dir + mf_file
-                    yield CustomerData(data, path, record)
-
-            else:
-                continue
-
-
-def get_mixmatch_gen(org_path):
-    """Get Mix & Match data"""
-    group_dirs_names = os.listdir(org_path)
-    for group_dir_name in group_dirs_names:
-        mf_dir = get_mf_dir(org_path, group_dir_name)
-        mf_xml_files = get_mf_xml(mf_dir)
-
-        for mf_file in mf_xml_files:
-            data = parse_xml(os.path.join(mf_dir, mf_file))
-            name_tag = data.find("Name").text
-
-            if name_tag == "Mix & Match":
-                records = get_xml_records(data)
-
-                for record in records:
-                    mm_name = record.find("Name").text
-
-                    if not check_tag_length(mm_name):
-                        continue
-
-                    path = mf_dir + mf_file
-                    yield MixMatchData(data, path, record)
-
-            else:
-                continue
-
-
-def get_tax_gen(org_path):
-    """Get tax data"""
-    group_dirs_names = os.listdir(org_path)
-    for group_dir_name in group_dirs_names:
-        mf_dir = get_mf_dir(org_path, group_dir_name)
-        mf_xml_files = get_mf_xml(mf_dir)
-
-        for mf_file in mf_xml_files:
-            data = parse_xml(os.path.join(mf_dir, mf_file))
-            name_tag = data.find("Name").text
-
-            if name_tag == "Tax table":
-                records = get_xml_records(data)
-
-                for record in records:
-                    tax_name = record.find("Name").text
-
-                    if not check_tag_length(tax_name):
-                        continue
-
-                    path = mf_dir + mf_file
-                    yield TaxData(data, path, record)
+                    yield classname(data, path, record)
 
             else:
                 continue

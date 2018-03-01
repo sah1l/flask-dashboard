@@ -2,32 +2,29 @@
 Connects to database and adds new data from XML files
 """
 import os
-
 from sqlalchemy.orm import sessionmaker
+import traceback
 
 from app import db, base
 from app.models import Organization, FixedTotalizer, FreeFunction, Department, Group, PLU, PLU2nd, MixMatch, Tax, \
                         Clerk, Customer, Order, OrderLine
-from app.mod_auth.models import User
-from app.mod_db_manage.xml_parser import get_orders_gen, get_order_items_gen, get_fixed_total_gen, get_free_func_gen, \
-                        get_department_gen, get_group_gen, get_plu_gen, get_clerk_gen, get_customer_gen, \
-                        get_mixmatch_gen, get_plu2nd_gen, get_tax_gen
-from app.mod_db_manage.config import DATA_DIR, SCRIPT_DIR
-
-MAGIC_INDRAWER_NUMBER = 3  # a number to calculate in-drawer records
+from app.mod_db_manage.xml_parser import get_orders_gen, get_order_items_gen, extract_master_files_data
+from app.mod_db_manage.config import DATA_DIR, SCRIPT_DIR, MAGIC_INDRAWER_NUMBER
+from app.mod_db_manage.utils import check_group_dirs, check_master_files_dirs, DATATYPES_NAMES
 
 
 class DBInsert:
     """
     Inserts new data from XML files to database
+    New instance is created for each valid Group directory of organization directory
     """
-    def __init__(self, _session_maker, _org_dir, _org_id):
-        self.session = _session_maker()
-        self.org_dir = _org_dir
-        self.org_id = _org_id
+    def __init__(self, session_maker, org_dir, org_id):
+        self.session = session_maker()
+        self.org_dir = org_dir
+        self.org_id = org_id
 
-    def create_all_tables(self, _db):
-        base.metadata.create_all(_db)
+    def create_all_tables(self):
+        base.metadata.create_all(db)
 
     def db_check_duplicate(self, classname, **kwargs):
         """
@@ -44,7 +41,7 @@ class DBInsert:
         self.session.close()
 
     def insert_fixed_totalizer(self):
-        fixed_totalizers = get_fixed_total_gen(self.org_dir)
+        fixed_totalizers = extract_master_files_data(self.org_dir, DATATYPES_NAMES["fixed_totalizer"])
 
         for ft in fixed_totalizers:
             ft_duplicate = self.db_check_duplicate(FixedTotalizer, number=ft.number, org_id=self.org_id)
@@ -63,7 +60,7 @@ class DBInsert:
             print(db_ft)
 
     def insert_free_function(self):
-        free_functions = get_free_func_gen(self.org_dir)
+        free_functions = extract_master_files_data(self.org_dir, DATATYPES_NAMES["free_function"])
 
         for ff in free_functions:
             ff_duplicate = self.db_check_duplicate(FreeFunction, number=ff.number, org_id=self.org_id)
@@ -83,7 +80,7 @@ class DBInsert:
             print(db_ff)
 
     def insert_group(self):
-        groups = get_group_gen(self.org_dir)
+        groups = extract_master_files_data(self.org_dir, DATATYPES_NAMES["group_name"])
 
         for group in groups:
             group_duplicate = self.db_check_duplicate(Group, number=group.number, org_id=self.org_id)
@@ -102,7 +99,7 @@ class DBInsert:
             print(db_group)
 
     def insert_departments(self):
-        departments = get_department_gen(self.org_dir)
+        departments = extract_master_files_data(self.org_dir, DATATYPES_NAMES["department_name"])
 
         for dep in departments:
             dep_duplicate = self.db_check_duplicate(Department, number=dep.number, org_id=self.org_id)
@@ -128,7 +125,7 @@ class DBInsert:
             print(db_dep)
 
     def insert_mixmatch(self):
-        mixmatch = get_mixmatch_gen(self.org_dir)
+        mixmatch = extract_master_files_data(self.org_dir, DATATYPES_NAMES["mixmatch_name"])
 
         for mm in mixmatch:
             mm_duplicate = self.db_check_duplicate(MixMatch, number=mm.number, org_id=self.org_id)
@@ -150,7 +147,7 @@ class DBInsert:
             print(db_mm)
 
     def insert_taxes(self):
-        taxes = get_tax_gen(self.org_dir)
+        taxes = extract_master_files_data(self.org_dir, DATATYPES_NAMES["tax_name"])
 
         for tax in taxes:
             tax_duplicate = self.db_check_duplicate(Tax, number=tax.number, org_id=self.org_id)
@@ -170,7 +167,7 @@ class DBInsert:
             print(db_tax)
 
     def insert_plu(self):
-        plu_s = get_plu_gen(self.org_dir)
+        plu_s = extract_master_files_data(self.org_dir, DATATYPES_NAMES["plu_name"])
 
         for plu in plu_s:
             plu_duplicate = self.db_check_duplicate(PLU, number=plu.number, org_id=self.org_id)
@@ -219,7 +216,7 @@ class DBInsert:
             print(db_plu)
 
     def insert_plu_2nd(self):
-        plu_s = get_plu2nd_gen(self.org_dir)
+        plu_s = extract_master_files_data(self.org_dir, DATATYPES_NAMES["plu2nd_name"])
 
         for plu in plu_s:
             plu_duplicate = self.db_check_duplicate(PLU2nd, number=plu.number, org_id=self.org_id)
@@ -259,7 +256,7 @@ class DBInsert:
             print(db_plu)
 
     def insert_clerks(self):
-        clerks = get_clerk_gen(self.org_dir)
+        clerks = extract_master_files_data(self.org_dir, DATATYPES_NAMES["clerk_name"])
 
         for clerk in clerks:
             clerk_duplicate = self.db_check_duplicate(Clerk, number=clerk.number, org_id=self.org_id)
@@ -278,7 +275,7 @@ class DBInsert:
             print(db_clerk)
 
     def insert_customers(self):
-        customers = get_customer_gen(self.org_dir)
+        customers = extract_master_files_data(self.org_dir, DATATYPES_NAMES["customer_name"])
 
         for customer in customers:
             customer_duplicate = self.db_check_duplicate(Customer, number=customer.number, org_id=self.org_id)
@@ -432,18 +429,33 @@ if __name__ == "__main__":
 
     data_path = os.path.join(SCRIPT_DIR, DATA_DIR)
     org_dirs = os.listdir(data_path)
+
+    # go through each directory in data storage
     for org_dir in org_dirs:
         print(org_dir)
         org_data_path = os.path.join(data_path, org_dir)
+
+        # check if organization directory contains any group directories
+        if not check_group_dirs(org_data_path):
+            print("This directory ({}) does not contain Group directories. Abort.".format(org_dir))
+            continue
+
+        # check if organization directory has at least one Master Files directory in all group subdirectories
+        if not check_master_files_dirs(org_data_path):
+            print("This directory ({}) does not contain Master Files directories. Abort.".format(org_dir))
+            continue
+
         session = session_maker()
         org_id = session.query(Organization.id).filter_by(data_dir=org_dir).first()
-        
+        session.close()
+
+        # check if there is no existing organization for this directory
         if not org_id:
-            print('org with dir {} was not found'.format(org_dir))
+            print('Organization with directory "{}" was not found. Abort.'.format(org_dir))
             continue
 
         db_insert = DBInsert(session_maker, org_data_path, org_id)
-        db_insert.create_all_tables(db)
+        db_insert.create_all_tables()
 
         try:
             db_insert.insert_fixed_totalizer()
@@ -458,12 +470,13 @@ if __name__ == "__main__":
             db_insert.insert_customers()
             db_insert.insert_order_data()
 
-        except Exception as e:
-            print(e)
+            print("Processed successfully")
+
+        except Exception:
+            print("Processed with error:")
+            traceback.print_exc()
 
         db_insert.close_session()
-
-        print("processed successfully")
 
     # session = session_maker()
     # user = User(username="admin", email="admin@mail.com", is_admin=True)
@@ -471,4 +484,3 @@ if __name__ == "__main__":
     # session.add(user)
     # session.commit()
     # session.close()
-
