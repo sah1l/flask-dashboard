@@ -168,7 +168,7 @@ def calc_this_quarter_timeframe():
     """
     now_time = datetime.datetime.utcnow()
     this_year = str(now_time.year)
-    this_quarter = (now_time.month - 1) // 3 + 1
+    this_quarter = (now_time.month - 1) // 3 + 1  # integer value from 0 to 3 that represents a quarter of the year
     start_month, end_month = match_dates_and_quarter(this_quarter, this_year)
 
     return start_month, end_month
@@ -183,7 +183,7 @@ def calc_last_quarter_timeframe():
     """
     lq_time = datetime.datetime.utcnow() - relativedelta(months=3)
     lq_year = str(lq_time.year)
-    last_quarter = (lq_time.month - 1) // 3 + 1
+    last_quarter = (lq_time.month - 1) // 3 + 1  # integer value from 0 to 3 that represents a quarter of the year
     start_month, end_month = match_dates_and_quarter(last_quarter, lq_year)
 
     return start_month, end_month
@@ -196,16 +196,18 @@ def dict_write_values(dictionary, entry_id, name, price, qty):
     If this is a new element, creates dictionary structure for it. 
     If this element is present, sums values up with their total values.
     """
+    price = PriceValue(price).get_value()
+
     if entry_id in dictionary.keys():
         dictionary[entry_id]["price_sum"] += price
         dictionary[entry_id]["qty_sum"] += qty
-
     else:
         dictionary[entry_id] = {}
         dictionary[entry_id]["name"] = name
         dictionary[entry_id]["price_sum"] = price
         dictionary[entry_id]["qty_sum"] = qty
-    dictionary[entry_id]["price_sum"] = float("{0:.2f}".format(dictionary[entry_id]["price_sum"])) # ATTENTION here
+
+    dictionary[entry_id]["price_sum"] = PriceValue(dictionary[entry_id]["price_sum"]).round_half_up() # ATTENTION here
     
     return dictionary
 
@@ -239,22 +241,24 @@ def accumulate_gross_net(dictionary, item_type, price, qty):
     - if item type is Free Function, accumulate price
 
     :param dictionary: dictionary that contains accumulated values for each Fixed total
-    :param item_type: integer that represents type of each item (PLU/PLU 2nd or Free Function, see app/mod_db_manage/config.py)
+    :param item_type: integer that represents type of each item (
+    PLU/PLU 2nd or Free Function, see app/mod_db_manage/config.py)
     :param price: price value
     :param qty: quantity value
     :return: dictionary with updated values of Gross and Net
     """
+    price = PriceValue(price).get_value()
+
     # Calculating Gross
     if item_type == PLU_ITEM_TYPE or item_type == PLU2ND_ITEM_TYPE:
         # work with negative price here
         dictionary["Gross"]["price_sum"] += price
-        dictionary["Gross"]["price_sum"] = float("{0:.2f}".format(dictionary["Gross"]["price_sum"])) # ATTENTION here
-
+        dictionary["Gross"]["price_sum"] = PriceValue(dictionary["Gross"]["price_sum"]).round_half_up()
         dictionary["Gross"]["qty_sum"] += qty
     # Calculating Net
     elif item_type == FREE_FUNC_ITEM_TYPE:
         dictionary["Net"]["price_sum"] += price
-        dictionary["Net"]["price_sum"] = float("{0:.2f}".format(dictionary["Net"]["price_sum"])) # ATTENTION here
+        dictionary["Net"]["price_sum"] = PriceValue(dictionary["Net"]["price_sum"]).round_half_up()
         dictionary["Net"]["qty_sum"] += qty
 
     return dictionary
@@ -308,20 +312,17 @@ def tax_fill_values(dictionary, tax_name, tax_name_amt, vat, net_amount):
 
 class PriceValue:
     """
-    Represents price
+    Represents price.
+
+    Rounds values half up by two decimals
+
+    Uses get_value method to get price value
     """
     def __init__(self, value):
         self.value = Decimal(str(value))
 
     def get_value(self):
         return self.value
-
-    def round(self):
-        """
-        Default rounding of Decimal value
-        :return: Decimal rounded by 2 numbers after floating point
-        """
-        return self.value.quantize(Decimal('.01'))
 
     def round_half_up(self):
         """
@@ -334,8 +335,7 @@ class PriceValue:
 
 class StatsDataExtractor:
     """
-    Extracts statistics data from database.
-    Handles time frames.
+    Extracts statistics data from database according needed time frames.
     """
     def __init__(self, org_id, start_time, end_time):
         session_maker = sessionmaker(db)
@@ -358,7 +358,7 @@ class StatsDataExtractor:
         """
         Get Department sales
         """
-        _dict = {}
+        data_dict = {}
 
         for ol in self.orderlines:
             price = ol.value
@@ -373,9 +373,9 @@ class StatsDataExtractor:
             else:
                 continue
             
-            _dict = dict_write_values(_dict, dep_id, dep_name, price, qty)
+            data_dict = dict_write_values(data_dict, dep_id, dep_name, price, qty)
         
-        return _dict
+        return data_dict
 
     def get_fixed_totalizers(self):
         """
@@ -383,8 +383,8 @@ class StatsDataExtractor:
         Gross values:
         :return: dictionary with accumulated values of fixed totals
         """
-        _dict = {}
-        _dict = gross_net_fill_values(_dict)
+        data_dict = {}
+        data_dict = gross_net_fill_values(data_dict)
 
         for ol in self.orderlines:
             if ol.free_function:  # ATTENTION!!! FIX!!! skip statistics for HOLD items
@@ -407,28 +407,28 @@ class StatsDataExtractor:
                 tax_name_amt = tax_name + " AMT"
                 vat, net_amount = calculate_vat_net(tax_rate, price)
 
-                if tax_name in _dict.keys():
-                    _dict[tax_name]["price_sum"] += vat
-                    _dict[tax_name_amt]["price_sum"] += net_amount
+                if tax_name in data_dict.keys():
+                    data_dict[tax_name]["price_sum"] += vat
+                    data_dict[tax_name_amt]["price_sum"] += net_amount
                 else:
-                    tax_fill_values(_dict, tax_name, tax_name_amt, vat, net_amount)
+                    tax_fill_values(data_dict, tax_name, tax_name_amt, vat, net_amount)
 
             # there are such free functions as '3 for 2' (Group 3/Order2)
             # that have 1 item type and None free func, also with negative value
             # this value spoils results so check for None there
             elif ol.item_type == FREE_FUNC_ITEM_TYPE and ol.free_func_id is not None:
                 ft_name = ol.fixed_totalizer.name
-                _dict = dict_write_values(_dict, ft_name, ft_name, price, qty)
+                data_dict = dict_write_values(data_dict, ft_name, ft_name, price, qty)
 
-            _dict = accumulate_gross_net(_dict, ol.item_type, price, qty)
+            data_dict = accumulate_gross_net(data_dict, ol.item_type, price, qty)
 
-        return _dict
+        return data_dict
 
     def get_plu_sales_data(self):
         """
         Get PLU sales
         """
-        _dict = {}
+        data_dict = {}
 
         for ol in self.orderlines:
             qty = ol.qty
@@ -443,9 +443,9 @@ class StatsDataExtractor:
             else:
                 continue
 
-            _dict = dict_write_values(_dict, product_id, product_name, price, qty)
+            data_dict = dict_write_values(data_dict, product_id, product_name, price, qty)
 
-        return _dict
+        return data_dict
 
     def get_last_100_sales(self):
         """
@@ -456,12 +456,12 @@ class StatsDataExtractor:
             Order.date_time >= self.start_time,
             Order.date_time <= self.end_time
         )
-        ).order_by(Order.date_time.desc()).all()  # add timelines here
+        ).order_by(Order.date_time.desc()).all()
 
         if len(orders) > 100:
             orders = orders[:100]
 
-        _dict = {}
+        data_dict = {}
 
         for order in orders:
             date_time = order.date_time
@@ -472,36 +472,34 @@ class StatsDataExtractor:
             for item in order.items:
                 sales_total += item.value
 
-            _dict[sale_id] = {}
-            _dict[sale_id]["date_time"] = date_time
-            _dict[sale_id]["id"] = sale_id
-            _dict[sale_id]["site"] = site
-            _dict[sale_id]["sales_total"] = sales_total
+            data_dict[sale_id] = {}
+            data_dict[sale_id]["date_time"] = date_time
+            data_dict[sale_id]["id"] = sale_id
+            data_dict[sale_id]["site"] = site
+            data_dict[sale_id]["sales_total"] = PriceValue(sales_total).round_half_up()
 
-            _dict[sale_id]["sales_total"] = float("{0:.2f}".format(_dict[sale_id]["sales_total"])) # ATTENTION here
-
-        return _dict
+        return data_dict
 
     def get_clerks_breakdown(self):
         """
         Get Clerks breakdown sales
         """
-        _dict = {}
+        data_dict = {}
 
         for ol in self.orderlines:
             clerk_name = ol.order.clerk.name
             clerk_id = ol.order.clerk_id
             price = ol.value
             qty = ol.qty
-            _dict = dict_write_values(_dict, clerk_id, clerk_name, price, qty)
+            data_dict = dict_write_values(data_dict, clerk_id, clerk_name, price, qty)
 
-        return _dict
+        return data_dict
 
     def get_group_sales_data(self):
         """
         Get Group sales
         """
-        _dict = {}
+        data_dict = {}
 
         for ol in self.orderlines:
             qty = ol.qty
@@ -516,15 +514,15 @@ class StatsDataExtractor:
             else:
                 continue
 
-            _dict = dict_write_values(_dict, group_id, group_name, price, qty)
+            data_dict = dict_write_values(data_dict, group_id, group_name, price, qty)
 
-        return _dict
+        return data_dict
 
     def get_free_func(self):
         """
         Get Free functions data
         """
-        _dict = {}
+        data_dict = {}
 
         for ol in self.orderlines:
             ff_id = ol.free_func_id
@@ -542,6 +540,6 @@ class StatsDataExtractor:
                 qty = abs(qty)
                 price = abs(price)
 
-            _dict = dict_write_values(_dict, ff_id, ff_name, price, qty)
+            data_dict = dict_write_values(data_dict, ff_id, ff_name, price, qty)
 
-        return _dict
+        return data_dict

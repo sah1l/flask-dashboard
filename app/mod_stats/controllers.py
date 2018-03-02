@@ -97,7 +97,10 @@ class ShowDataView(View):
 
         if org_form.validate_on_submit():
             new_org_id = org_form.organization.data
-            return redirect(url_for("stats.{}".format(self.route_name), org_id=new_org_id))
+            return redirect(url_for("stats.{}".format(self.route_name),
+                                    org_id=new_org_id,
+                                    start_date=self.start_datetime,
+                                    end_date=self.end_datetime))
 
         # custom timeline form
         dt_form = CustomTimeSliceForm()
