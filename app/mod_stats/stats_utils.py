@@ -12,11 +12,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app import db
 from app.models import OrderLine, Order, Organization
-
-
-PLU_ITEM_TYPE = 0
-FREE_FUNC_ITEM_TYPE = 1
-PLU2ND_ITEM_TYPE = 3
+from app.mod_db_manage.config import FREE_FUNC_ITEM_TYPE, PLU_ITEM_TYPE, PLU2ND_ITEM_TYPE
 
 
 def calc_today_timeframe():
@@ -230,15 +226,35 @@ def gross_net_fill_values(dictionary):
     return dictionary
 
 
-def calculate_gross_net(dictionary, item_type, price, qty):
+def accumulate_gross_net(dictionary, item_type, price, qty):
     """
     Sums up Gross and Net values
+
+    How Gross is calculated:
+
+    - if item type is PLU or PLU 2nd, accumulate price
+
+    How Net is calculated:
+
+    - if item type is Free Function, accumulate price
+
+    :param dictionary: dictionary that contains accumulated values for each Fixed total
+    :param item_type: integer that represents type of each item (PLU/PLU 2nd or Free Function, see app/mod_db_manage/config.py)
+    :param price: price value
+    :param qty: quantity value
+    :return: dictionary with updated values of Gross and Net
     """
     # Calculating Gross
     if item_type == PLU_ITEM_TYPE or item_type == PLU2ND_ITEM_TYPE:
+        # work with negative price here
+        print("old price for gross", dictionary["Gross"]["price_sum"])
         dictionary["Gross"]["price_sum"] += price
         dictionary["Gross"]["price_sum"] = float("{0:.2f}".format(dictionary["Gross"]["price_sum"])) # ATTENTION here
+
+        print(price)
+        print(qty)
         dictionary["Gross"]["qty_sum"] += qty
+        print("new price for gross", dictionary["Gross"]["price_sum"])
     # Calculating Net
     elif item_type == FREE_FUNC_ITEM_TYPE:
         dictionary["Net"]["price_sum"] += price
@@ -269,10 +285,10 @@ def calculate_vat_net(tax_rate, gross_value_raw):
 
     Result precision was compared with this calculator: http://vatcalconline.com/
     """
-    gross_value = Decimal(str(gross_value_raw))
-    divider = Decimal(1) + Decimal(tax_rate / 100).quantize(Decimal('.01'))
-    raw_net_amount = Decimal(gross_value / divider)
-    vat = Decimal((-1*(raw_net_amount-gross_value)).quantize(Decimal('.01'), rounding=ROUND_HALF_UP))
+    gross_value = PriceValue(gross_value_raw).get_value()
+    divider = PriceValue(1 + tax_rate / 100).get_value()
+    raw_net_amount = PriceValue(gross_value / divider).round_half_up()
+    vat = PriceValue(-1 * (raw_net_amount - gross_value)).round_half_up()
     net_amount = gross_value - vat
 
     return vat, net_amount
@@ -292,6 +308,32 @@ def tax_fill_values(dictionary, tax_name, tax_name_amt, vat, net_amount):
     dictionary[tax_name_amt]["qty_sum"] = 0
 
     return dictionary
+
+
+class PriceValue:
+    """
+    Represents price
+    """
+    def __init__(self, value):
+        self.value = Decimal(str(value))
+
+    def get_value(self):
+        return self.value
+
+    def round(self):
+        """
+        Default rounding of Decimal value
+        :return: Decimal rounded by 2 numbers after floating point
+        """
+        return self.value.quantize(Decimal('.01'))
+
+    def round_half_up(self):
+        """
+        Half up rounding of Decimal value
+        :return: Decimal rounded half up by 2 numbers after floating point
+        """
+        return self.value.quantize(Decimal('.01'), rounding=ROUND_HALF_UP)
+
 
 
 class StatsDataExtractor:
@@ -339,8 +381,12 @@ class StatsDataExtractor:
         
         return _dict
 
-    def get_fixed_totalizers(self):  # ATTENTION! NAMES are identifiers here, not Numbers! Consider this
-                                     # Include VOID
+    def get_fixed_totalizers(self):
+        """
+        Accumulates values for fixed totals according to asked period of time
+        Gross values:
+        :return: dictionary with accumulated values of fixed totals
+        """
         _dict = {}
         _dict = gross_net_fill_values(_dict)
 
@@ -352,13 +398,16 @@ class StatsDataExtractor:
             qty = ol.qty
             price = ol.value
 
+            # calculate taxes
             if ol.item_type == PLU_ITEM_TYPE or ol.item_type == PLU2ND_ITEM_TYPE:
+
                 if ol.item_type == PLU_ITEM_TYPE:
                     tax_name = ol.plu.tax.name
                     tax_rate = int(ol.plu.tax.rate)
                 else:
                     tax_name = ol.plu_2nd.tax.name
                     tax_rate = int(ol.plu_2nd.tax.rate)
+
                 tax_name_amt = tax_name + " AMT"
                 vat, net_amount = calculate_vat_net(tax_rate, price)
 
@@ -375,7 +424,7 @@ class StatsDataExtractor:
                 ft_name = ol.fixed_totalizer.name
                 _dict = dict_write_values(_dict, ft_name, ft_name, price, qty)
 
-            _dict = calculate_gross_net(_dict, ol.item_type, price, qty)
+            _dict = accumulate_gross_net(_dict, ol.item_type, price, qty)
 
         return _dict
 
@@ -419,6 +468,7 @@ class StatsDataExtractor:
         _dict = {}
 
         for order in orders:
+            print(order)
             date_time = order.date_time
             sale_id = order.id
             site = self.session.query(Organization).filter_by(id=self.org_id).first().name

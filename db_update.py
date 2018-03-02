@@ -1,7 +1,6 @@
 """
 Connects to database and adds new data from XML files
 """
-import os
 from sqlalchemy.orm import sessionmaker
 import traceback
 
@@ -9,7 +8,7 @@ from app import db, base
 from app.models import Organization, FixedTotalizer, FreeFunction, Department, Group, PLU, PLU2nd, MixMatch, Tax, \
                         Clerk, Customer, Order, OrderLine
 from app.mod_db_manage.xml_parser import get_orders_gen, get_order_items_gen, extract_master_files_data
-from app.mod_db_manage.config import DATA_DIR, SCRIPT_DIR, MAGIC_INDRAWER_NUMBER
+from app.mod_db_manage.config import *
 from app.mod_db_manage.utils import check_group_dirs, check_master_files_dirs, DATATYPES_NAMES
 
 
@@ -338,7 +337,64 @@ class DBInsert:
         db_orderline.fixed_total_id = self.session.query(FixedTotalizer).filter_by(name=order_item.name).first().id
         return db_orderline
 
+    def get_order_lines(self, db_order, order_lines):
+        """
+        Insert order lines of particular order to database
+        :param db_order: Order object
+        :param order_lines:
+        """
+        for ol_num, order_item in enumerate(order_lines):
+            db_orderline = OrderLine()
+            db_orderline.order_id = db_order.id
+            db_orderline.qty = order_item.qty
+
+            # work with negative quantity
+            # add free function VOID
+            if int(order_item.qty) < 0:
+                void_free_function = session.query(FreeFunction).filter_by(org_id=self.org_id, name='VOID').first()
+                db_orderline.free_func_number = void_free_function.id
+
+            db_orderline.value = order_item.value
+            db_orderline.item_type = order_item.item_type
+
+            # process PLU-type item
+            if order_item.item_type == str(PLU_ITEM_TYPE):
+                db_orderline = self.customize_orderline_plu(db_orderline, order_item.item_number)
+
+            # process Free Function-type item
+            elif order_item.item_type == str(FREE_FUNC_ITEM_TYPE):
+                db_orderline = self.customize_orderline_freefunc(order_item, db_orderline)
+
+                # check if item has a change (for cash-type free functions)
+                if "CASH" in order_item.name:
+                    if ol_num < len(order_lines) - 1:
+                        next_item = order_lines[ol_num + 1]
+                        if next_item.item_type == str(TEXT_ITEM_TYPE) and next_item.name == "CHANGE":
+                            db_orderline.value = float(order_item.value) - float(next_item.value)
+                            db_orderline.change = next_item.value
+                        else:
+                            pass
+                else:
+                    pass
+
+            # process PLU 2nd-type item
+            elif order_item.item_type == str(PLU2ND_ITEM_TYPE):
+                db_orderline = self.customize_orderline_plu_2nd(db_orderline, order_item.item_number)
+
+            # process Fixed totalizer-type item
+            elif order_item.item_type == str(FIXED_TOTAL_TYPE):
+                db_orderline = self.customize_orderline_fixedtotal(order_item, db_orderline)
+
+            else:
+                continue
+
+            self.session.add(db_orderline)
+            self.session.commit()
+
     def insert_order_data(self):
+        """
+        Insert orders to database
+        """
         orders = get_orders_gen(self.org_dir)
 
         for order in orders:
@@ -376,56 +432,15 @@ class DBInsert:
                              )
             self.session.add(db_order)
             self.session.commit()
-            order_items = list(get_order_items_gen(db_order.filepath))
 
-            for ol_num, order_item in enumerate(order_items):
-                db_orderline = OrderLine()
-                db_orderline.order_id = db_order.id
-                db_orderline.qty = order_item.qty
-
-                # work with negative quantity
-                # add free function VOID
-                if int(order_item.qty) < 0:
-                    void_free_function = session.query(FreeFunction).filter_by(org_id=self.org_id, name='VOID').first()
-                    db_orderline.free_func_number = void_free_function.id
-
-                db_orderline.value = order_item.value
-                db_orderline.item_type = order_item.item_type
-
-                if order_item.item_type == "0":
-                    db_orderline = self.customize_orderline_plu(db_orderline, order_item.item_number)
-
-                elif order_item.item_type == "1":
-                    db_orderline = self.customize_orderline_freefunc(order_item, db_orderline)
-
-                    # check if item has a change (for cash-type free functions)
-                    if "CASH" in order_item.name:
-                        if ol_num < len(order_items) - 1:
-                            next_item = order_items[ol_num+1]
-                            if next_item.item_type == "2" and next_item.name == "CHANGE":
-                                db_orderline.value = float(order_item.value) - float(next_item.value)
-                                db_orderline.change = next_item.value
-                            else:
-                                pass
-                    else:
-                        pass
-
-                elif order_item.item_type == "3":
-                    db_orderline = self.customize_orderline_plu_2nd(db_orderline, order_item.item_number)
-
-                elif order_item.item_type == "4":
-                    db_orderline = self.customize_orderline_fixedtotal(order_item, db_orderline)
-
-                else:
-                    continue
-
-                self.session.add(db_orderline)
-                self.session.commit()
+            # process order lines
+            order_lines = list(get_order_items_gen(db_order.filepath))
+            self.get_order_lines(db_order, order_lines)
 
 
 if __name__ == "__main__":
     session_maker = sessionmaker(db)
-    base.metadata.create_all(db)
+    # base.metadata.create_all(db)
 
     data_path = os.path.join(SCRIPT_DIR, DATA_DIR)
     org_dirs = os.listdir(data_path)
