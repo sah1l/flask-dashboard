@@ -247,14 +247,10 @@ def accumulate_gross_net(dictionary, item_type, price, qty):
     # Calculating Gross
     if item_type == PLU_ITEM_TYPE or item_type == PLU2ND_ITEM_TYPE:
         # work with negative price here
-        print("old price for gross", dictionary["Gross"]["price_sum"])
         dictionary["Gross"]["price_sum"] += price
         dictionary["Gross"]["price_sum"] = float("{0:.2f}".format(dictionary["Gross"]["price_sum"])) # ATTENTION here
 
-        print(price)
-        print(qty)
         dictionary["Gross"]["qty_sum"] += qty
-        print("new price for gross", dictionary["Gross"]["price_sum"])
     # Calculating Net
     elif item_type == FREE_FUNC_ITEM_TYPE:
         dictionary["Net"]["price_sum"] += price
@@ -468,7 +464,6 @@ class StatsDataExtractor:
         _dict = {}
 
         for order in orders:
-            print(order)
             date_time = order.date_time
             sale_id = order.id
             site = self.session.query(Organization).filter_by(id=self.org_id).first().name
