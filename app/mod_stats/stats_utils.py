@@ -470,7 +470,11 @@ class StatsDataExtractor:
             sales_total = 0
             
             for item in order.items:
-                sales_total += item.value
+                # count only Free Function item types that mean result values
+                # if delete this, PLU and PLU 2nd items' values will be added to result values
+                # this will cause doubling results
+                if item.item_type == FREE_FUNC_ITEM_TYPE:
+                    sales_total += item.value
 
             data_dict[sale_id] = {}
             data_dict[sale_id]["date_time"] = date_time
