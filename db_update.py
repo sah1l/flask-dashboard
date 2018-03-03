@@ -367,15 +367,12 @@ class DBInsert:
 
                 # check if item has a change (for cash-type free functions)
                 if "CASH" in order_item.name:
+
                     if ol_num < len(order_lines) - 1:
                         next_item = order_lines[ol_num + 1]
+
                         if next_item.item_type == str(TEXT_ITEM_TYPE) and next_item.name == "CHANGE":
-                            db_orderline.value = float(order_item.value) - float(next_item.value)
                             db_orderline.change = next_item.value
-                        else:
-                            pass
-                else:
-                    pass
 
             # process PLU 2nd-type item
             elif order_item.item_type == str(PLU2ND_ITEM_TYPE):
@@ -406,14 +403,15 @@ class DBInsert:
                 continue
 
             # get clerk id
-            valid_clerk = self.session.query(Clerk).filter_by(number=order.clerk_number).first()
+            valid_clerk = self.session.query(Clerk).filter_by(number=order.clerk_number, org_id=self.org_id).first()
             if not valid_clerk:
                 clerk_id = None
             else:
                 clerk_id = valid_clerk.id
 
             # get customer id
-            valid_customer = self.session.query(Customer).filter_by(number=order.customer_number).first()
+            valid_customer = self.session.query(Customer).filter_by(
+                number=order.customer_number, org_id=self.org_id).first()
             if not valid_customer:
                 customer_id = None
             else:

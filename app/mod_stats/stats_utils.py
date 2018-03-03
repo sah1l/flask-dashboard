@@ -491,11 +491,18 @@ class StatsDataExtractor:
         data_dict = {}
 
         for ol in self.orderlines:
-            clerk_name = ol.order.clerk.name
-            clerk_id = ol.order.clerk_id
-            price = ol.value
-            qty = ol.qty
-            data_dict = dict_write_values(data_dict, clerk_id, clerk_name, price, qty)
+            # count only free functions
+            if ol.item_type == FREE_FUNC_ITEM_TYPE:
+                clerk_name = ol.order.clerk.name
+                clerk_id = ol.order.clerk_id
+                price = ol.value
+
+                # encounter change
+                if ol.change:
+                    price -= ol.change
+
+                qty = ol.qty
+                data_dict = dict_write_values(data_dict, clerk_id, clerk_name, price, qty)
 
         return data_dict
 
