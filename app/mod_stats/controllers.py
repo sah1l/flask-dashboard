@@ -4,7 +4,7 @@ from flask.views import View
 from sqlalchemy.exc import OperationalError
 
 from app import session_maker
-from app.models import Organization, Order
+from app.models import Organization, Order, Department, Group
 from app.mod_auth.models import User
 from app.mod_stats.stats_utils import StatsDataExtractor, PriceValue, calc_today_timeframe, calc_yesterday_timeframe, \
     calc_this_week_timeframe, calc_last_week_timeframe, calc_this_month_timeframe, calc_last_month_timeframe, \
@@ -39,6 +39,8 @@ def get_order_details(org_id, order_id):
     session = session_maker()
     order = session.query(Order).filter_by(id=order_id).first()
     orderlines = order.items
+
+    # order details
     clerk_name = order.clerk.name
     site = session.query(Organization).filter_by(id=org_id).first().name
     total_sale = 0
@@ -51,6 +53,7 @@ def get_order_details(org_id, order_id):
 
     total_sale = PriceValue(total_sale).get_value()
 
+    # sales information
     plu_sale_items = []
     plu_2nd_items = []
     free_func_items = []
@@ -77,7 +80,54 @@ def get_order_details(org_id, order_id):
         else:
             pass
 
-    print(plu_sale_items)
+    # get Group sales and Department sales
+    group_sales = {}
+    department_sales = {}
+
+    for sale in orderlines:
+        if sale.product_id:
+            group_id = sale.product.group.id
+            dep_id = sale.product.department.id
+
+            # add group data
+            if group_id not in group_sales.keys():
+                group_sales[group_id] = {}
+                group_name = sale.product.group.name
+                group_sales[group_id] = {
+                    "name": group_name,
+                    "qty": sale.qty,
+                    "price": PriceValue(sale.value).get_value()}
+            else:
+                group_sales[group_id]["qty"] += 1
+                group_sales[group_id]["price"] += PriceValue(sale.value).get_value()
+
+            # add department data
+            if dep_id not in department_sales.keys():
+                department_sales[dep_id] = {}
+                dep_name = sale.product.department.name
+                department_sales[dep_id] = {
+                    "name": dep_name,
+                    "qty": sale.qty,
+                    "price": PriceValue(sale.value).get_value()}
+            else:
+                department_sales[dep_id]["qty"] += 1
+                department_sales[dep_id]["price"] += PriceValue(sale.value).get_value()
+
+    # get fixed totals
+    fixed_totals = {}
+
+    for sale in orderlines:
+        if sale.fixed_total_id:
+            ft_id = sale.fixed_total_id
+
+            if ft_id not in fixed_totals.keys():
+                fixed_totals[ft_id] = {}
+                fixed_totals[ft_id] = {"name": sale.fixed_totalizer.name,
+                                       "qty": sale.qty,
+                                       "price": PriceValue(sale.value).get_value()}
+            else:
+                fixed_totals[ft_id]["qty"] += 1
+                fixed_totals[ft_id]["price"] += PriceValue(sale.value).get_value()
 
     session.close()
 
@@ -88,7 +138,10 @@ def get_order_details(org_id, order_id):
                            total_sale=total_sale,
                            plu_sale_items=plu_sale_items,
                            plu_2nd_items=plu_2nd_items,
-                           free_func_items=free_func_items)
+                           free_func_items=free_func_items,
+                           group_sales=group_sales,
+                           department_sales=department_sales,
+                           fixed_totals=fixed_totals)
 
 
 class ShowDataView(View):
@@ -106,15 +159,17 @@ class ShowDataView(View):
 
         self.session = session_maker()
 
-    def check_org_id(self, user):
+    def check_org_id(self, user, _org_id):
         """
         Dashboard URL in left panel doesn't know which organizations are assigned to the user
         0 is generated automatically
 
         :param: user object
         """
-        if self.org_id == 0:
-            self.org_id = user.organizations[0].id
+        if _org_id == "0":
+            _org_id = user.organizations[0].id
+
+        return _org_id
 
     def dispatch_request(self, **kwargs):
         self.org_id = kwargs['org_id']
@@ -132,7 +187,7 @@ class ShowDataView(View):
         if not user.organizations:
             return render_template("stats/base.html", error_message="You do not have any organizations yet.")
 
-        self.check_org_id(user)
+        self.org_id = self.check_org_id(user, self.org_id)
         org_name = self.session.query(Organization).filter_by(id=self.org_id).first().name
 
         # getting statistics data

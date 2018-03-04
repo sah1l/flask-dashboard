@@ -4,12 +4,12 @@
     <div class="page-content">
         <div class="table-block col-lg-9 col-sm-12">
             <!-- Table's title -->
-            <div id="title-block">
+            <div class="title-block">
                 <h4> SALE ID: {{ order.id }}</h4>
             </div>
 
             <!-- Order info table -->
-            <table class="table stats-table table-striped table-bordered table-hover" id="order-info-table">
+            <table class="table stats-table table-striped table-bordered table-hover table-sm" id="order-info-table">
                 <thead>
                     <tr>
                         <th>Date</th>
@@ -27,7 +27,7 @@
                         <td>{{ order.id }}</td>
                         <td>{{ site }}</td>
                         <td>{{ clerk_name }}</td>
-                        <td>{{ total_sale }}</td>
+                        <td>&#163;{{ total_sale }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -35,11 +35,11 @@
 
         <div class="table-block col-lg-9 col-sm-12">
             <!-- Table's title -->
-            <div id="title-block">
+            <div class="title-block">
                 <h4> Sales Information</h4>
             </div>
             <!-- Order details table -->
-            <table class="table stats-table table-striped table-bordered table-hover" id="order-info-table">
+            <table class="table stats-table table-striped table-bordered table-hover table-sm" id="order-info-table">
                 <thead>
                 <tr>
                     <th>Name</th>
@@ -53,7 +53,7 @@
                     <tr>
                         <td>{{ sale.name }}</td>
                         <td>{{ sale.qty }}</td>
-                        <td>{{ sale.price }}</td>
+                        <td>&#163;{{ sale.price }}</td>
                     </tr>
                 {% endfor %}
 
@@ -61,18 +61,78 @@
                     <tr>
                         <td>{{ sale.name }}</td>
                         <td>{{ sale.qty }}</td>
-                        <td>{{ sale.price }}</td>
+                        <td>&#163;{{ sale.price }}</td>
                     </tr>
                 {% endfor %}
 
                 {% for sale in free_func_items %}
-                    <tr>
+                    <tr class="table-success">
                         <td>{{ sale.name }}</td>
                         <td>{{ sale.qty }}</td>
-                        <td>{{ sale.price }}</td>
+                        <td>&#163;{{ sale.price }}</td>
                     </tr>
                 {% endfor %}
 
+                </tbody>
+            </table>
+        </div>
+        <div class="table-block col-lg-9 col-sm-12">
+            <!-- Table's title -->
+            <div class="title-block">
+                <h4>Department &amp; Group Totals</h4>
+            </div>
+            <!-- Department and group sales table -->
+            <table class="table stats-table table-striped table-bordered table-hover table-sm"
+                   id="department-group-sales-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Quantity</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for sale in group_sales.values() %}
+                    <tr class="table-info">
+                        <td>{{ sale.name }}</td>
+                        <td>{{ sale.qty }}</td>
+                        <td>&#163;{{ sale.price }}</td>
+                    </tr>
+                {% endfor %}
+
+                {% for sale in department_sales.values() %}
+                    <tr class="table-warning">
+                        <td>{{ sale.name }}</td>
+                        <td>{{ sale.qty }}</td>
+                        <td>&#163;{{ sale.price }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="table-block col-lg-9 col-sm-12">
+            <!-- Table's title -->
+            <div class="title-block">
+                <h4>Fixed Totalizers</h4>
+            </div>
+            <!-- Department and group sales table -->
+            <table class="table stats-table table-striped table-bordered table-hover table-sm"
+            id="fixed-totals-sales-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Quantity</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sale in fixed_totals.values() %}
+                        <tr>
+                            <td>{{ sale.name }}</td>
+                            <td>{{ sale.qty }}</td>
+                            <td>&#163;{{ sale.price }}</td>
+                        </tr>
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
