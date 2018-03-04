@@ -18,13 +18,13 @@
         <tr>
             <td>{{ loop.index }}</td>
             <td>{{ sale.date_time }}</td>
-            <td>{{ sale.id }}</td>
+            <td><a href="{{ url_for("stats.get_order_details", org_id=organization_id, order_id=sale.id) }}">
+                {{ sale.id }}</a>
+            </td>
             <td>{{ sale.site }}</td>
             <td>{{ sale.sales_total }}</td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
-{% set total_sales = last_100_sales_data.values()|sum(attribute='sales_total') %}
-<p>Total sales: {{ '%0.2f'| format(total_sales|float) }}</p>
 {% endblock %}

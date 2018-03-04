@@ -144,12 +144,17 @@
     padding-right: 10px;
 }
 
-#organization-name h4 {
-    margin-bottom: 0;
+#title-block h4 {
+    margin-bottom: 10px;
 }
 
 #statistics-data {
     margin-top: 20px;
+}
+
+/* Order details */
+.table-block {
+    padding-bottom: 20px;
 }
 
 /* Footer */

@@ -325,16 +325,18 @@ class DBInsert:
         fixed_total_number = int(order_item.option[-1]) + MAGIC_INDRAWER_NUMBER
         fixed_total = self.session.query(FixedTotalizer).filter_by(number=fixed_total_number).first()
         db_orderline.fixed_total_id = fixed_total.id
+
         return db_orderline
 
     def customize_orderline_plu_2nd(self, db_orderline, plu2nd_number):
         db_orderline.product_id_2nd = self.session.query(PLU2nd).filter_by(number=plu2nd_number).first().id
+
         return db_orderline
 
     def customize_orderline_fixedtotal(self, order_item, db_orderline):
         """Customize OrderLine object with FixedTotalizer details (for ItemType = 4)"""
-        # db_orderline.fixed_total_number = order_item.item_number
         db_orderline.fixed_total_id = self.session.query(FixedTotalizer).filter_by(name=order_item.name).first().id
+
         return db_orderline
 
     def get_order_lines(self, db_order, order_lines):

@@ -1,0 +1,80 @@
+{% extends "layout.html" %}
+
+{% block body %}
+    <div class="page-content">
+        <div class="table-block col-lg-9 col-sm-12">
+            <!-- Table's title -->
+            <div id="title-block">
+                <h4> SALE ID: {{ order.id }}</h4>
+            </div>
+
+            <!-- Order info table -->
+            <table class="table stats-table table-striped table-bordered table-hover" id="order-info-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Consec Number</th>
+                        <th>Sale ID</th>
+                        <th>Site</th>
+                        <th>Clerk</th>
+                        <th>Sale Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{ order.date_time }}</td>
+                        <td>{{ order.consecutive_number }}</td>
+                        <td>{{ order.id }}</td>
+                        <td>{{ site }}</td>
+                        <td>{{ clerk_name }}</td>
+                        <td>{{ total_sale }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-block col-lg-9 col-sm-12">
+            <!-- Table's title -->
+            <div id="title-block">
+                <h4> Sales Information</h4>
+            </div>
+            <!-- Order details table -->
+            <table class="table stats-table table-striped table-bordered table-hover" id="order-info-table">
+                <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Quantity</th>
+                    <th>Value</th>
+                </tr>
+                </thead>
+                <tbody>
+
+                {% for sale in plu_sale_items %}
+                    <tr>
+                        <td>{{ sale.name }}</td>
+                        <td>{{ sale.qty }}</td>
+                        <td>{{ sale.price }}</td>
+                    </tr>
+                {% endfor %}
+
+                {% for sale in plu_2nd_items %}
+                    <tr>
+                        <td>{{ sale.name }}</td>
+                        <td>{{ sale.qty }}</td>
+                        <td>{{ sale.price }}</td>
+                    </tr>
+                {% endfor %}
+
+                {% for sale in free_func_items %}
+                    <tr>
+                        <td>{{ sale.name }}</td>
+                        <td>{{ sale.qty }}</td>
+                        <td>{{ sale.price }}</td>
+                    </tr>
+                {% endfor %}
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

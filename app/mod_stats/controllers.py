@@ -1,16 +1,16 @@
-import datetime
 from flask import Blueprint, render_template, url_for, redirect
 from flask_login import current_user
 from flask.views import View
 from sqlalchemy.exc import OperationalError
 
 from app import session_maker
-from app.models import Organization
+from app.models import Organization, Order
 from app.mod_auth.models import User
-from app.mod_stats.stats_utils import StatsDataExtractor, calc_today_timeframe, calc_yesterday_timeframe, \
+from app.mod_stats.stats_utils import StatsDataExtractor, PriceValue, calc_today_timeframe, calc_yesterday_timeframe, \
     calc_this_week_timeframe, calc_last_week_timeframe, calc_this_month_timeframe, calc_last_month_timeframe, \
     calc_this_quarter_timeframe, calc_last_quarter_timeframe
 from app.mod_stats.forms import CustomizeStatsForm, CustomTimeSliceForm
+from app.mod_db_manage.config import FREE_FUNC_ITEM_TYPE
 
 
 # define Blueprint for statistics module
@@ -34,9 +34,67 @@ def handle_operational_error(error):
     return "No connection with database"
 
 
+@mod_stats.route("/<org_id>/sale_<order_id>", methods=["GET"])
+def get_order_details(org_id, order_id):
+    session = session_maker()
+    order = session.query(Order).filter_by(id=order_id).first()
+    orderlines = order.items
+    clerk_name = order.clerk.name
+    site = session.query(Organization).filter_by(id=org_id).first().name
+    total_sale = 0
+
+    for ol in orderlines:
+        if ol.item_type == FREE_FUNC_ITEM_TYPE:
+            total_sale = ol.value
+            if ol.change:
+                total_sale -= ol.change
+
+    total_sale = PriceValue(total_sale).get_value()
+
+    plu_sale_items = []
+    plu_2nd_items = []
+    free_func_items = []
+
+    for sale in orderlines:
+        # include only PLU, PLU 2nd and Free Function orderlines
+        if sale.product_id:
+            plu_sale_items.append({"name": sale.product.name,
+                                   "qty": sale.qty,
+                                   "price": PriceValue(sale.value).get_value()})
+        elif sale.product_id_2nd:
+            plu_2nd_items.append({"name": sale.product_2nd.name,
+                                  "qty": sale.qty,
+                                  "price": PriceValue(sale.value).get_value()})
+        elif sale.free_func_id:
+            free_func_items.append({"name": sale.free_function.name,
+                                    "qty": sale.qty,
+                                    "price": PriceValue(sale.value).get_value()})
+            # consider change
+            if sale.change:
+                free_func_items.append({"name": "CHANGE",
+                                        "qty": 0,
+                                        "price": PriceValue(sale.change).get_value()})
+        else:
+            pass
+
+    print(plu_sale_items)
+
+    session.close()
+
+    return render_template("stats/order_details.html",
+                           order=order,
+                           site=site,
+                           clerk_name=clerk_name,
+                           total_sale=total_sale,
+                           plu_sale_items=plu_sale_items,
+                           plu_2nd_items=plu_2nd_items,
+                           free_func_items=free_func_items)
+
+
 class ShowDataView(View):
     """
-    Generic class that gives data according to given timelines
+    Generic class that gives statistics data  according to given timelines
+    Is shown on dashboard
     """
     methods = ['GET', 'POST']
 
@@ -124,7 +182,8 @@ class ShowDataView(View):
                                free_function_data=free_function_data,
                                org_form=org_form,
                                dt_form=dt_form,
-                               organization_name=org_name
+                               organization_name=org_name,
+                               organization_id=self.org_id
                                )
 
 

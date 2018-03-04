@@ -319,7 +319,7 @@ class PriceValue:
     Uses get_value method to get price value
     """
     def __init__(self, value):
-        self.value = Decimal(str(value))
+        self.value = Decimal(str(value)).quantize(Decimal('.01'))
 
     def get_value(self):
         return self.value
@@ -432,7 +432,8 @@ class StatsDataExtractor:
 
         for ol in self.orderlines:
             qty = ol.qty
-            price = ol.value
+            price = PriceValue(ol.value).get_value()
+
             # encounter PLU and PLU2nd
             if ol.item_type == PLU_ITEM_TYPE:
                 product_id = ol.product_id
