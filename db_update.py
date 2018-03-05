@@ -440,7 +440,7 @@ class DBInsert:
 
 if __name__ == "__main__":
     session_maker = sessionmaker(db)
-    # base.metadata.create_all(db)
+    base.metadata.create_all(db)
 
     data_path = os.path.join(SCRIPT_DIR, DATA_DIR)
     org_dirs = os.listdir(data_path)
@@ -470,7 +470,7 @@ if __name__ == "__main__":
             continue
 
         db_insert = DBInsert(session_maker, org_data_path, org_id)
-        db_insert.create_all_tables()
+        # db_insert.create_all_tables()
 
         try:
             db_insert.insert_fixed_totalizer()

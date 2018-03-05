@@ -207,7 +207,7 @@ def dict_write_values(dictionary, entry_id, name, price, qty):
         dictionary[entry_id]["price_sum"] = price
         dictionary[entry_id]["qty_sum"] = qty
 
-    dictionary[entry_id]["price_sum"] = PriceValue(dictionary[entry_id]["price_sum"]).round_half_up() # ATTENTION here
+    dictionary[entry_id]["price_sum"] = PriceValue(dictionary[entry_id]["price_sum"]).round_half_up()
     
     return dictionary
 

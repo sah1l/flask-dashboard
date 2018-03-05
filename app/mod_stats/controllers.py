@@ -4,11 +4,11 @@ from flask.views import View
 from sqlalchemy.exc import OperationalError
 
 from app import session_maker
-from app.models import Organization, Order, Department, Group
+from app.models import Organization, Order
 from app.mod_auth.models import User
 from app.mod_stats.stats_utils import StatsDataExtractor, PriceValue, calc_today_timeframe, calc_yesterday_timeframe, \
     calc_this_week_timeframe, calc_last_week_timeframe, calc_this_month_timeframe, calc_last_month_timeframe, \
-    calc_this_quarter_timeframe, calc_last_quarter_timeframe
+    calc_this_quarter_timeframe, calc_last_quarter_timeframe, dict_write_values
 from app.mod_stats.forms import CustomizeStatsForm, CustomTimeSliceForm
 from app.mod_db_manage.config import FREE_FUNC_ITEM_TYPE
 
@@ -47,7 +47,7 @@ def get_order_details(org_id, order_id):
 
     for ol in orderlines:
         if ol.item_type == FREE_FUNC_ITEM_TYPE:
-            total_sale = ol.value
+            total_sale += ol.value
             if ol.change:
                 total_sale -= ol.change
 
@@ -57,77 +57,54 @@ def get_order_details(org_id, order_id):
     plu_sale_items = []
     plu_2nd_items = []
     free_func_items = []
-
-    for sale in orderlines:
-        # include only PLU, PLU 2nd and Free Function orderlines
-        if sale.product_id:
-            plu_sale_items.append({"name": sale.product.name,
-                                   "qty": sale.qty,
-                                   "price": PriceValue(sale.value).get_value()})
-        elif sale.product_id_2nd:
-            plu_2nd_items.append({"name": sale.product_2nd.name,
-                                  "qty": sale.qty,
-                                  "price": PriceValue(sale.value).get_value()})
-        elif sale.free_func_id:
-            free_func_items.append({"name": sale.free_function.name,
-                                    "qty": sale.qty,
-                                    "price": PriceValue(sale.value).get_value()})
-            # consider change
-            if sale.change:
-                free_func_items.append({"name": "CHANGE",
-                                        "qty": 0,
-                                        "price": PriceValue(sale.change).get_value()})
-        else:
-            pass
-
-    # get Group sales and Department sales
     group_sales = {}
     department_sales = {}
-
-    for sale in orderlines:
-        if sale.product_id:
-            group_id = sale.product.group.id
-            dep_id = sale.product.department.id
-
-            # add group data
-            if group_id not in group_sales.keys():
-                group_sales[group_id] = {}
-                group_name = sale.product.group.name
-                group_sales[group_id] = {
-                    "name": group_name,
-                    "qty": sale.qty,
-                    "price": PriceValue(sale.value).get_value()}
-            else:
-                group_sales[group_id]["qty"] += 1
-                group_sales[group_id]["price"] += PriceValue(sale.value).get_value()
-
-            # add department data
-            if dep_id not in department_sales.keys():
-                department_sales[dep_id] = {}
-                dep_name = sale.product.department.name
-                department_sales[dep_id] = {
-                    "name": dep_name,
-                    "qty": sale.qty,
-                    "price": PriceValue(sale.value).get_value()}
-            else:
-                department_sales[dep_id]["qty"] += 1
-                department_sales[dep_id]["price"] += PriceValue(sale.value).get_value()
-
-    # get fixed totals
     fixed_totals = {}
 
     for sale in orderlines:
-        if sale.fixed_total_id:
-            ft_id = sale.fixed_total_id
+        qty = sale.qty
+        price = PriceValue(sale.value).get_value()
 
-            if ft_id not in fixed_totals.keys():
-                fixed_totals[ft_id] = {}
-                fixed_totals[ft_id] = {"name": sale.fixed_totalizer.name,
-                                       "qty": sale.qty,
-                                       "price": PriceValue(sale.value).get_value()}
-            else:
-                fixed_totals[ft_id]["qty"] += 1
-                fixed_totals[ft_id]["price"] += PriceValue(sale.value).get_value()
+        # include only PLU, PLU 2nd and Free Function orderlines
+        if sale.product_id:
+            plu_sale_items.append({"name": sale.product.name,
+                                   "qty": qty,
+                                   "price": price})
+        elif sale.product_id_2nd:
+            plu_2nd_items.append({"name": sale.product_2nd.name,
+                                  "qty": qty,
+                                  "price": price})
+
+        elif sale.free_func_id:
+            free_func_items.append({"name": sale.free_function.name,
+                                    "qty": qty,
+                                    "price": price})
+            # consider change
+            if sale.change:
+                free_func_items.append({"name": "CHANGE",
+                                        "qty": qty,
+                                        "price": sale.change})
+
+        # get Group sales and Department sales
+        if sale.product_id:
+            group_id = sale.product.group.id
+            dep_id = sale.product.department.id
+            group_name = sale.product.group.name
+            dep_name = sale.product.department.name
+            qty = sale.qty
+            price = PriceValue(sale.value).get_value()
+
+            group_sales = dict_write_values(group_sales, group_id, group_name, price, qty)
+            department_sales = dict_write_values(department_sales, dep_id, dep_name, price, qty)
+        # get Fixed Totals
+        elif sale.fixed_total_id:
+            ft_id = sale.fixed_total_id
+            ft_name = sale.fixed_totalizer.name
+            price = PriceValue(sale.value).get_value()
+            qty = sale.qty
+            fixed_totals = dict_write_values(fixed_totals, ft_id, ft_name, price, qty)
+        else:
+            pass
 
     session.close()
 

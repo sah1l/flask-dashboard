@@ -95,16 +95,16 @@
                 {% for sale in group_sales.values() %}
                     <tr class="table-info">
                         <td>{{ sale.name }}</td>
-                        <td>{{ sale.qty }}</td>
-                        <td>&#163;{{ sale.price }}</td>
+                        <td>{{ sale.qty_sum }}</td>
+                        <td>&#163;{{ sale.price_sum }}</td>
                     </tr>
                 {% endfor %}
 
                 {% for sale in department_sales.values() %}
                     <tr class="table-warning">
                         <td>{{ sale.name }}</td>
-                        <td>{{ sale.qty }}</td>
-                        <td>&#163;{{ sale.price }}</td>
+                        <td>{{ sale.qty_sum }}</td>
+                        <td>&#163;{{ sale.price_sum }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -129,8 +129,8 @@
                     {% for sale in fixed_totals.values() %}
                         <tr>
                             <td>{{ sale.name }}</td>
-                            <td>{{ sale.qty }}</td>
-                            <td>&#163;{{ sale.price }}</td>
+                            <td>{{ sale.qty_sum }}</td>
+                            <td>&#163;{{ sale.price_sum }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>
