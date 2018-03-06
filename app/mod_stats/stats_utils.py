@@ -189,29 +189,6 @@ def calc_last_quarter_timeframe():
     return start_month, end_month
 
 
-def dict_write_values(dictionary, entry_id, name, price, qty):
-    """
-    Write new values to dictionary.
-    Entry's number is a key for top-level structure.
-    If this is a new element, creates dictionary structure for it. 
-    If this element is present, sums values up with their total values.
-    """
-    price = PriceValue(price).get_value()
-
-    if entry_id in dictionary.keys():
-        dictionary[entry_id]["price_sum"] += price
-        dictionary[entry_id]["qty_sum"] += qty
-    else:
-        dictionary[entry_id] = {}
-        dictionary[entry_id]["name"] = name
-        dictionary[entry_id]["price_sum"] = price
-        dictionary[entry_id]["qty_sum"] = qty
-
-    dictionary[entry_id]["price_sum"] = PriceValue(dictionary[entry_id]["price_sum"]).get_value()
-    
-    return dictionary
-
-
 def gross_net_fill_values(dictionary):
     """
     Fills fixed_totalizer dictionary with values for Gross/Net totalizers
@@ -330,6 +307,34 @@ class StatsDataExtractor:
     Extracts statistics data from database according needed time frames.
     """
     def __init__(self, org_id, start_time, end_time):
+        """
+        :param org_id: ID of the requested organization
+        :param start_time: start time to get data from database
+        :param end_time: end time to get data from database
+
+        Parameter of methods that get statistics data for PLU sales (get_plu_sales_data):
+        :param detailed_report: keyword argument to specify if detailed report is needed or not.
+
+        Detailed report means that values of price and quantity will not be summed up to each other.
+        Example concept:
+
+        Input data:
+        Orderline 1: name: Sandwich, quantity: 1, price: 3.95
+        Orderline 2: name: Sandwich, quantity: 1, price: 3.95
+
+        Detailed report:
+        {
+            {"unique_item_1": {"name": "Sandwich", quantity: 1, price: 3.95}}
+            {"unique_item_2": {"name": "Sandwich", quantity: 1, price: 3.95}}
+        }
+        Detailed report is required in Order Details page, PLU / PLU 2nd items
+
+        Summed report:
+        {
+            {"item": {"name": "Sandwich", quantity: 2, price: 7.90}}
+        }
+        Summed report is used in most cases in statistics data shown in dashboard
+        """
         session_maker = sessionmaker(db)
         self.session = session_maker()
         self.org_id = org_id
@@ -346,6 +351,42 @@ class StatsDataExtractor:
     def close_session(self):
         self.session.close()
 
+    def dict_write_values(self, dictionary, entry_id, name, price, qty, unique_id=""):
+        """
+        Write new values to dictionary.
+        Entry's number is a key for top-level structure.
+
+        Summing up case:
+        If this is a new element, creates dictionary structure for it.
+        If this element is present, sums values up with their total values.
+
+        Detailed case:
+        Each element is unique, values are not summed up
+
+        :param dictionary: dictionary with accumulated data
+        :param entry_id: ID of the element in database (or name in a few cases)
+        :param name: a string that identifies the entry
+        :param price
+        :param qty: quantity
+        :param unique_id: empty string for summing up case, orderline ID for detailed case
+        :return: renewed values of dictionary
+        """
+        price = PriceValue(price).get_value()
+        item_id = str(entry_id) + "_" + str(unique_id)
+
+        if item_id in dictionary.keys():
+            dictionary[item_id]["price_sum"] += price
+            dictionary[item_id]["qty_sum"] += qty
+        else:
+            dictionary[item_id] = {}
+            dictionary[item_id]["name"] = name
+            dictionary[item_id]["price_sum"] = price
+            dictionary[item_id]["qty_sum"] = qty
+
+        dictionary[item_id]["price_sum"] = PriceValue(dictionary[item_id]["price_sum"]).get_value()
+
+        return dictionary
+
     def get_department_sales_data(self):
         """
         Get Department sales
@@ -359,13 +400,10 @@ class StatsDataExtractor:
             if ol.item_type == PLU_ITEM_TYPE or ol.item_type == PLU2ND_ITEM_TYPE:
                 dep_id = ol.plu.department_id
                 dep_name = ol.plu.department.name
-            # elif ol.item_type == PLU2ND_ITEM_TYPE:
-            #     dep_id = ol.plu_2nd.department_id
-            #     dep_name = ol.plu_2nd.department_name
             else:
                 continue
             
-            data_dict = dict_write_values(data_dict, dep_id, dep_name, price, qty)
+            data_dict = self.dict_write_values(data_dict, dep_id, dep_name, price, qty)
         
         return data_dict
 
@@ -389,13 +427,8 @@ class StatsDataExtractor:
             # calculate taxes
             if ol.item_type == PLU_ITEM_TYPE or ol.item_type == PLU2ND_ITEM_TYPE:
 
-                # if ol.item_type == PLU_ITEM_TYPE:
                 tax_name = ol.plu.tax.name
                 tax_rate = int(ol.plu.tax.rate)
-                # else:
-                #     tax_name = ol.plu_2nd.tax.name
-                #     tax_rate = int(ol.plu_2nd.tax.rate)
-
                 tax_name_amt = tax_name + " AMT"
                 vat, net_amount = calculate_vat_net(tax_rate, price)
 
@@ -415,13 +448,13 @@ class StatsDataExtractor:
                     price -= PriceValue(ol.change).get_value()
 
                 ft_name = ol.fixed_totalizer.name
-                data_dict = dict_write_values(data_dict, ft_name, ft_name, price, qty)
+                data_dict = self.dict_write_values(data_dict, ft_name, ft_name, price, qty)
 
             data_dict = accumulate_gross_net(data_dict, ol.item_type, price, qty)
 
         return data_dict
 
-    def get_plu_sales_data(self):
+    def get_plu_sales_data(self, detailed_report=False):
         """
         Get PLU sales
         """
@@ -435,13 +468,16 @@ class StatsDataExtractor:
             if ol.item_type == PLU_ITEM_TYPE or ol.item_type == PLU2ND_ITEM_TYPE:
                 product_id = ol.product_id
                 product_name = ol.product.name
-            # elif ol.item_type == PLU2ND_ITEM_TYPE:
-            #     product_id = ol.product_id_2nd
-            #     product_name = ol.product_2nd.name
             else:
                 continue
 
-            data_dict = dict_write_values(data_dict, product_id, product_name, price, qty)
+            # specify unique ID for each PLU element
+            if detailed_report:
+                unique_id = ol.id
+            else:
+                unique_id = ""
+
+            data_dict = self.dict_write_values(data_dict, product_id, product_name, price, qty, unique_id=unique_id)
 
         return data_dict
 
@@ -504,7 +540,7 @@ class StatsDataExtractor:
                     price -= ol.change
 
                 qty = ol.qty
-                data_dict = dict_write_values(data_dict, clerk_id, clerk_name, price, qty)
+                data_dict = self.dict_write_values(data_dict, clerk_id, clerk_name, price, qty)
 
         return data_dict
 
@@ -521,13 +557,10 @@ class StatsDataExtractor:
             if ol.item_type == PLU_ITEM_TYPE or ol.item_type == PLU2ND_ITEM_TYPE:
                 group_id = ol.plu.group_id
                 group_name = ol.plu.group.name
-            # elif ol.item_type == PLU2ND_ITEM_TYPE:
-            #     group_id = ol.plu_2nd.group_id
-            #     group_name = ol.plu_2nd.group_name
             else:
                 continue
 
-            data_dict = dict_write_values(data_dict, group_id, group_name, price, qty)
+            data_dict = self.dict_write_values(data_dict, group_id, group_name, price, qty)
 
         return data_dict
 
@@ -549,11 +582,13 @@ class StatsDataExtractor:
             qty = ol.qty
             price = ol.value
 
-            if ff_name == "VOID":  # VOID has negative values, so convert them to positive
+            # VOID has negative values, so convert them to positive
+            # this will show VOIDs in free function data, but, with positive values!
+            if ff_name == "VOID":
                 qty = abs(qty)
                 price = abs(price)
 
-            data_dict = dict_write_values(data_dict, ff_id, ff_name, price, qty)
+            data_dict = self.dict_write_values(data_dict, ff_id, ff_name, price, qty)
 
         return data_dict
 

@@ -270,18 +270,18 @@ class DBInsert:
         """
         Insert order lines of particular order to database
         :param db_order: Order object
-        :param order_lines:
+        :param order_lines: order lines (items of the order)
         """
         for ol_num, order_item in enumerate(order_lines):
             db_orderline = OrderLine()
             db_orderline.order_id = db_order.id
             db_orderline.qty = order_item.qty
 
-            # work with negative quantity
+            # work with VOID free functions
             # add free function VOID
-            if int(order_item.qty) < 0:
+            if "VD:" in order_item.name:
                 void_free_function = session.query(FreeFunction).filter_by(org_id=self.org_id, name='VOID').first()
-                db_orderline.free_func_number = void_free_function.id
+                db_orderline.free_func_id = void_free_function.id
 
             db_orderline.value = order_item.value
             db_orderline.item_type = order_item.item_type
