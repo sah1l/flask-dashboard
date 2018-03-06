@@ -6,11 +6,10 @@ from sqlalchemy.exc import OperationalError
 from app import session_maker
 from app.models import Organization, Order
 from app.mod_auth.models import User
-from app.mod_stats.stats_utils import StatsDataExtractor, PriceValue, calc_today_timeframe, calc_yesterday_timeframe, \
+from app.mod_stats.stats_utils import StatsDataExtractor, calc_today_timeframe, calc_yesterday_timeframe, \
     calc_this_week_timeframe, calc_last_week_timeframe, calc_this_month_timeframe, calc_last_month_timeframe, \
-    calc_this_quarter_timeframe, calc_last_quarter_timeframe, dict_write_values
+    calc_this_quarter_timeframe, calc_last_quarter_timeframe
 from app.mod_stats.forms import CustomizeStatsForm, CustomTimeSliceForm
-from app.mod_db_manage.config import FREE_FUNC_ITEM_TYPE
 
 
 # define Blueprint for statistics module
@@ -21,6 +20,8 @@ mod_stats = Blueprint('stats', __name__, url_prefix='/dashboard')
 def check_authenticated_user():
     """
     Restrict access to statistics to not authenticated users
+
+    :return: login page
     """
     if not current_user.is_authenticated:
         return redirect(url_for("auth.login"))
@@ -30,82 +31,42 @@ def check_authenticated_user():
 def handle_operational_error(error):
     """
     Handles situation when there's no connection with database
+
+    :param error: occured database connection error
+    :return: according message
     """
     return "No connection with database"
 
 
 @mod_stats.route("/<org_id>/sale_<order_id>", methods=["GET"])
 def get_order_details(org_id, order_id):
+    """
+    Get order details page (Dashboard -> last 100 sales table -> Click on order ID)
+    
+    :param org_id: id of the organization
+    :param order_id: id of the order
+    :return: "stats/order_details.html" template with parameters
+    """
     session = session_maker()
     order = session.query(Order).filter_by(id=order_id).first()
-    orderlines = order.items
+    start_datetime = order.date_time
+    end_datetime = order.date_time
+
+    # sales details
+    data_handler = StatsDataExtractor(org_id, start_datetime, end_datetime)
+    plu_sales_data = data_handler.get_plu_sales_data()
+    free_func_sales_data = data_handler.get_free_func()
+    change = data_handler.calculate_change()
+    group_sales_data = data_handler.get_group_sales_data()
+    department_sales_data = data_handler.get_department_sales_data()
+    fixed_totalizers_sales_data = data_handler.get_fixed_totalizers()
 
     # order details
     clerk_name = order.clerk.name
     site = session.query(Organization).filter_by(id=org_id).first().name
-    total_sale = 0
+    total_sale = data_handler.calculate_total_sales()
 
-    for ol in orderlines:
-        if ol.item_type == FREE_FUNC_ITEM_TYPE:
-            total_sale += ol.value
-            if ol.change:
-                total_sale -= ol.change
-
-    total_sale = PriceValue(total_sale).get_value()
-
-    # sales information
-    plu_sale_items = []
-    plu_2nd_items = []
-    free_func_items = []
-    group_sales = {}
-    department_sales = {}
-    fixed_totals = {}
-
-    for sale in orderlines:
-        qty = sale.qty
-        price = PriceValue(sale.value).get_value()
-
-        # include only PLU, PLU 2nd and Free Function orderlines
-        if sale.product_id:
-            plu_sale_items.append({"name": sale.product.name,
-                                   "qty": qty,
-                                   "price": price})
-        elif sale.product_id_2nd:
-            plu_2nd_items.append({"name": sale.product_2nd.name,
-                                  "qty": qty,
-                                  "price": price})
-
-        elif sale.free_func_id:
-            free_func_items.append({"name": sale.free_function.name,
-                                    "qty": qty,
-                                    "price": price})
-            # consider change
-            if sale.change:
-                free_func_items.append({"name": "CHANGE",
-                                        "qty": qty,
-                                        "price": sale.change})
-
-        # get Group sales and Department sales
-        if sale.product_id:
-            group_id = sale.product.group.id
-            dep_id = sale.product.department.id
-            group_name = sale.product.group.name
-            dep_name = sale.product.department.name
-            qty = sale.qty
-            price = PriceValue(sale.value).get_value()
-
-            group_sales = dict_write_values(group_sales, group_id, group_name, price, qty)
-            department_sales = dict_write_values(department_sales, dep_id, dep_name, price, qty)
-        # get Fixed Totals
-        elif sale.fixed_total_id:
-            ft_id = sale.fixed_total_id
-            ft_name = sale.fixed_totalizer.name
-            price = PriceValue(sale.value).get_value()
-            qty = sale.qty
-            fixed_totals = dict_write_values(fixed_totals, ft_id, ft_name, price, qty)
-        else:
-            pass
-
+    data_handler.close_session()
     session.close()
 
     return render_template("stats/order_details.html",
@@ -113,12 +74,12 @@ def get_order_details(org_id, order_id):
                            site=site,
                            clerk_name=clerk_name,
                            total_sale=total_sale,
-                           plu_sale_items=plu_sale_items,
-                           plu_2nd_items=plu_2nd_items,
-                           free_func_items=free_func_items,
-                           group_sales=group_sales,
-                           department_sales=department_sales,
-                           fixed_totals=fixed_totals)
+                           plu_sale_items=plu_sales_data,
+                           free_func_items=free_func_sales_data,
+                           change=change,
+                           group_sales=group_sales_data,
+                           department_sales=department_sales_data,
+                           fixed_totalizers_sales_data=fixed_totalizers_sales_data)
 
 
 class ShowDataView(View):
@@ -151,7 +112,7 @@ class ShowDataView(View):
     def dispatch_request(self, **kwargs):
         self.org_id = kwargs['org_id']
 
-        # custome datetimes case
+        # custom datetimes case
         try:
             self.start_datetime = kwargs['start_date']
             self.end_datetime = kwargs['end_date']

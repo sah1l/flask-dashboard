@@ -49,29 +49,35 @@
                 </thead>
                 <tbody>
 
-                {% for sale in plu_sale_items %}
+                {# PLU and PLU 2nd sales data #}
+
+                {% for sale in plu_sale_items.values() %}
                     <tr>
                         <td>{{ sale.name }}</td>
-                        <td>{{ sale.qty }}</td>
-                        <td>&#163;{{ sale.price }}</td>
+                        <td>{{ sale.qty_sum }}</td>
+                        <td>&#163;{{ sale.price_sum }}</td>
                     </tr>
                 {% endfor %}
 
-                {% for sale in plu_2nd_items %}
-                    <tr>
-                        <td>{{ sale.name }}</td>
-                        <td>{{ sale.qty }}</td>
-                        <td>&#163;{{ sale.price }}</td>
-                    </tr>
-                {% endfor %}
+                {# Free Functions data #}
 
-                {% for sale in free_func_items %}
+                {% for sale in free_func_items.values() %}
                     <tr class="table-success">
                         <td>{{ sale.name }}</td>
-                        <td>{{ sale.qty }}</td>
-                        <td>&#163;{{ sale.price }}</td>
+                        <td>{{ sale.qty_sum }}</td>
+                        <td>&#163;{{ sale.price_sum }}</td>
                     </tr>
                 {% endfor %}
+
+                {# Change data #}
+
+                {% if change > 0 %}
+                    <tr class="table-danger">
+                        <td>CHANGE</td>
+                        <td>0</td>
+                        <td>&#163;{{ change }}</td>
+                    </tr>
+                {% endif %}
 
                 </tbody>
             </table>
@@ -126,7 +132,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for sale in fixed_totals.values() %}
+                    {% for sale in fixed_totalizers_sales_data.values() %}
                         <tr>
                             <td>{{ sale.name }}</td>
                             <td>{{ sale.qty_sum }}</td>

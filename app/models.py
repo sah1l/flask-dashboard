@@ -29,7 +29,7 @@ class Organization(base):
     mixmatch = relationship("MixMatch", cascade="delete")
     taxes = relationship("Tax", cascade="delete")
     plus = relationship("PLU", cascade="delete")
-    plus2nd = relationship("PLU2nd", cascade="delete")
+    # plus2nd = relationship("PLU2nd", cascade="delete")
     clerks = relationship("Clerk", cascade="delete")
     customers = relationship("Customer", cascade="delete")
     orders = relationship("Order", cascade="delete")
@@ -78,7 +78,7 @@ class Group(Master):
     name = Column(String(50))
     departments = relationship("Department", back_populates="group")
     plus = relationship("PLU", back_populates="group")
-    plus_2nd = relationship("PLU2nd", back_populates="group")
+    # plus_2nd = relationship("PLU2nd", back_populates="group")
 
     def __repr__(self):
         return "Group: id=%s number=%s name=%s" % (
@@ -93,7 +93,7 @@ class Department(Master):
     group_id = Column(Integer, ForeignKey("groups.id"), nullable=True)
     group = relationship("Group", back_populates="departments")
     plus = relationship("PLU", back_populates="department")
-    plus_2nd = relationship("PLU2nd", back_populates="department")
+    # plus_2nd = relationship("PLU2nd", back_populates="department")
 
     def __repr__(self):
         return "Department: id=%s number=%s name=%s group_id=%s" % (
@@ -122,7 +122,7 @@ class Tax(Master):
     name = Column(String(50))
     rate = Column(Integer)
     plus = relationship("PLU", back_populates="tax")
-    plus2nd = relationship("PLU2nd", back_populates="tax")
+    # plus2nd = relationship("PLU2nd", back_populates="tax")
 
     def __repr__(self):
         return "Tax: id=%s number=%s name=%s rate=%s" % (
@@ -149,23 +149,23 @@ class PLU(Master):
                 self.id, self.name, self.number, self.group_id, self.department_id, self.price)
 
 
-class PLU2nd(Master):
-    __tablename__ = "plu_2nd"
-
-    org_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"))
-    name = Column(String(50))
-    group_id = Column(Integer, ForeignKey("groups.id"), nullable=True)
-    group = relationship("Group", back_populates="plus_2nd")
-    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
-    department = relationship("Department", back_populates="plus_2nd")
-    price = Column(Float)
-    tax_id = Column(Integer, ForeignKey("taxes.id"), nullable=True)
-    tax = relationship("Tax", uselist=False, back_populates="plus2nd")
-    orderlines = relationship("OrderLine", backref="plu_2nd", lazy="dynamic")
-
-    def __repr__(self):
-        return "PLU2nd: id=%s name=%s number=%s group_number=%s department_number=%s price=%s" % (
-                self.id, self.name, self.number, self.group_id, self.department_id, self.price)
+# class PLU2nd(Master):
+#     __tablename__ = "plu_2nd"
+#
+#     org_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"))
+#     name = Column(String(50))
+#     group_id = Column(Integer, ForeignKey("groups.id"), nullable=True)
+#     group = relationship("Group", back_populates="plus_2nd")
+#     department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
+#     department = relationship("Department", back_populates="plus_2nd")
+#     price = Column(Float)
+#     tax_id = Column(Integer, ForeignKey("taxes.id"), nullable=True)
+#     tax = relationship("Tax", uselist=False, back_populates="plus2nd")
+#     orderlines = relationship("OrderLine", backref="plu_2nd", lazy="dynamic")
+#
+#     def __repr__(self):
+#         return "PLU2nd: id=%s name=%s number=%s group_number=%s department_number=%s price=%s" % (
+#                 self.id, self.name, self.number, self.group_id, self.department_id, self.price)
 
 
 class Clerk(Master):
@@ -231,21 +231,21 @@ class OrderLine(base):
     qty = Column(Integer, nullable=False)
     value = Column(Float, nullable=False)
 
-    # for item type = 0
+    # for item type = 0 and 3 (PLU and PLU 2nd)
     product_id = Column(Integer, ForeignKey("plu.id"), nullable=True)
     product = relationship("PLU")
     mix_match_id = Column(Integer, ForeignKey("mix_match.id"), nullable=True)
 
-    # for item type = 1
+    # for item type = 1 (Free Functions)
     free_func_id = Column(Integer, ForeignKey("free_functions.id"), nullable=True)
     free_function = relationship("FreeFunction", uselist=False, back_populates="orderlines")
     change = Column(Float, nullable=True)  # for cash and cash-related items
 
     # for item type = 3
-    product_id_2nd = Column(Integer, ForeignKey("plu_2nd.id"), nullable=True)
-    product_2nd = relationship("PLU2nd")
+    # product_id_2nd = Column(Integer, ForeignKey("plu_2nd.id"), nullable=True)
+    # product_2nd = relationship("PLU2nd")
 
-    # for item type = 4 and 1
+    # for item type = 4 and 1 (Fixed Totalizers and Free Functions)
     fixed_total_id = Column(Integer, ForeignKey("fixed_totalizers.id"), nullable=True)
     fixed_totalizer = relationship("FixedTotalizer", uselist=False, back_populates="orderlines")
 

@@ -47,7 +47,7 @@ def choose_data_class(name):
     elif name == DATATYPES_NAMES["plu_name"]:
         return PLUData
     elif name == DATATYPES_NAMES["plu2nd_name"]:
-        return PLU2ndData
+        return PLUData
     elif name == DATATYPES_NAMES["clerk_name"]:
         return ClerkData
     elif name == DATATYPES_NAMES["customer_name"]:
@@ -156,18 +156,21 @@ class PLUData(MasterData):
         self.department_number = record.find("DepartmentNo").text
         self.price = record.find("Price").text
         self.tax_number = record.find("TaxNo").text
-        self.mix_match_number = record.find("MixMatch").text
+        try:
+            self.mix_match_number = record.find("MixMatch").text
+        except:
+            self.mix_match_number = None
 
 
-class PLU2ndData(MasterData):
-    def __init__(self, data, path, record):
-        super(PLU2ndData, self).__init__(data, path)
-        self.number = record.find("Number").text
-        self.name = record.find("Name").text
-        self.group_number = record.find("GroupNo").text
-        self.department_number = record.find("DepartmentNo").text
-        self.price = record.find("Price").text
-        self.tax_number = record.find("TaxNo").text
+# class PLU2ndData(MasterData):
+#     def __init__(self, data, path, record):
+#         super(PLU2ndData, self).__init__(data, path)
+#         self.number = record.find("Number").text
+#         self.name = record.find("Name").text
+#         self.group_number = record.find("GroupNo").text
+#         self.department_number = record.find("DepartmentNo").text
+#         self.price = record.find("Price").text
+#         self.tax_number = record.find("TaxNo").text
 
 
 class ClerkData(MasterData):

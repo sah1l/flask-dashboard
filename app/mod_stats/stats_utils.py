@@ -207,7 +207,7 @@ def dict_write_values(dictionary, entry_id, name, price, qty):
         dictionary[entry_id]["price_sum"] = price
         dictionary[entry_id]["qty_sum"] = qty
 
-    dictionary[entry_id]["price_sum"] = PriceValue(dictionary[entry_id]["price_sum"]).round_half_up()
+    dictionary[entry_id]["price_sum"] = PriceValue(dictionary[entry_id]["price_sum"]).get_value()
     
     return dictionary
 
@@ -253,12 +253,12 @@ def accumulate_gross_net(dictionary, item_type, price, qty):
     if item_type == PLU_ITEM_TYPE or item_type == PLU2ND_ITEM_TYPE:
         # work with negative price here
         dictionary["Gross"]["price_sum"] += price
-        dictionary["Gross"]["price_sum"] = PriceValue(dictionary["Gross"]["price_sum"]).round_half_up()
+        dictionary["Gross"]["price_sum"] = PriceValue(dictionary["Gross"]["price_sum"]).get_value()
         dictionary["Gross"]["qty_sum"] += qty
     # Calculating Net
     elif item_type == FREE_FUNC_ITEM_TYPE:
         dictionary["Net"]["price_sum"] += price
-        dictionary["Net"]["price_sum"] = PriceValue(dictionary["Net"]["price_sum"]).round_half_up()
+        dictionary["Net"]["price_sum"] = PriceValue(dictionary["Net"]["price_sum"]).get_value()
         dictionary["Net"]["qty_sum"] += qty
 
     return dictionary
@@ -287,8 +287,8 @@ def calculate_vat_net(tax_rate, gross_value_raw):
     """
     gross_value = PriceValue(gross_value_raw).get_value()
     divider = PriceValue(1 + tax_rate / 100).get_value()
-    raw_net_amount = PriceValue(gross_value / divider).round_half_up()
-    vat = PriceValue(-1 * (raw_net_amount - gross_value)).round_half_up()
+    raw_net_amount = PriceValue(gross_value / divider).get_value()
+    vat = PriceValue(-1 * (raw_net_amount - gross_value)).get_value()
     net_amount = gross_value - vat
 
     return vat, net_amount
@@ -318,19 +318,11 @@ class PriceValue:
 
     Uses get_value method to get price value
     """
-    def __init__(self, value):
-        self.value = Decimal(str(value)).quantize(Decimal('.01'))
+    def __init__(self, price_value):
+        self.price_value = Decimal(str(price_value)).quantize(Decimal('.01'), rounding=ROUND_HALF_UP)
 
     def get_value(self):
-        return self.value
-
-    def round_half_up(self):
-        """
-        Half up rounding of Decimal value
-        :return: Decimal rounded half up by 2 numbers after floating point
-        """
-        return self.value.quantize(Decimal('.01'), rounding=ROUND_HALF_UP)
-
+        return self.price_value
 
 
 class StatsDataExtractor:
@@ -364,12 +356,12 @@ class StatsDataExtractor:
             price = ol.value
             qty = ol.qty
             # encounter PLU and PLU2nd
-            if ol.item_type == PLU_ITEM_TYPE:
+            if ol.item_type == PLU_ITEM_TYPE or ol.item_type == PLU2ND_ITEM_TYPE:
                 dep_id = ol.plu.department_id
                 dep_name = ol.plu.department.name
-            elif ol.item_type == PLU2ND_ITEM_TYPE:
-                dep_id = ol.plu_2nd.department_id
-                dep_name = ol.plu_2nd.department_name
+            # elif ol.item_type == PLU2ND_ITEM_TYPE:
+            #     dep_id = ol.plu_2nd.department_id
+            #     dep_name = ol.plu_2nd.department_name
             else:
                 continue
             
@@ -387,22 +379,22 @@ class StatsDataExtractor:
         data_dict = gross_net_fill_values(data_dict)
 
         for ol in self.orderlines:
-            if ol.free_function:  # ATTENTION!!! FIX!!! skip statistics for HOLD items
+            if ol.free_function:  # skip statistics for HOLD items
                 if ol.free_function.name == 'HOLD':
                     continue
             
             qty = ol.qty
-            price = ol.value
+            price = PriceValue(ol.value).get_value()
 
             # calculate taxes
             if ol.item_type == PLU_ITEM_TYPE or ol.item_type == PLU2ND_ITEM_TYPE:
 
-                if ol.item_type == PLU_ITEM_TYPE:
-                    tax_name = ol.plu.tax.name
-                    tax_rate = int(ol.plu.tax.rate)
-                else:
-                    tax_name = ol.plu_2nd.tax.name
-                    tax_rate = int(ol.plu_2nd.tax.rate)
+                # if ol.item_type == PLU_ITEM_TYPE:
+                tax_name = ol.plu.tax.name
+                tax_rate = int(ol.plu.tax.rate)
+                # else:
+                #     tax_name = ol.plu_2nd.tax.name
+                #     tax_rate = int(ol.plu_2nd.tax.rate)
 
                 tax_name_amt = tax_name + " AMT"
                 vat, net_amount = calculate_vat_net(tax_rate, price)
@@ -417,6 +409,11 @@ class StatsDataExtractor:
             # that have 1 item type and None free func, also with negative value
             # this value spoils results so check for None there
             elif ol.item_type == FREE_FUNC_ITEM_TYPE and ol.free_func_id is not None:
+
+                # consider change for CASH-type items
+                if ol.change:
+                    price -= PriceValue(ol.change).get_value()
+
                 ft_name = ol.fixed_totalizer.name
                 data_dict = dict_write_values(data_dict, ft_name, ft_name, price, qty)
 
@@ -435,12 +432,12 @@ class StatsDataExtractor:
             price = PriceValue(ol.value).get_value()
 
             # encounter PLU and PLU2nd
-            if ol.item_type == PLU_ITEM_TYPE:
+            if ol.item_type == PLU_ITEM_TYPE or ol.item_type == PLU2ND_ITEM_TYPE:
                 product_id = ol.product_id
                 product_name = ol.product.name
-            elif ol.item_type == PLU2ND_ITEM_TYPE:
-                product_id = ol.product_id_2nd
-                product_name = ol.product_2nd.name
+            # elif ol.item_type == PLU2ND_ITEM_TYPE:
+            #     product_id = ol.product_id_2nd
+            #     product_name = ol.product_2nd.name
             else:
                 continue
 
@@ -477,11 +474,15 @@ class StatsDataExtractor:
                 if item.item_type == FREE_FUNC_ITEM_TYPE:
                     sales_total += item.value
 
+                    # consider change:
+                    if item.change:
+                        sales_total -= item.change
+
             data_dict[sale_id] = {}
             data_dict[sale_id]["date_time"] = date_time
             data_dict[sale_id]["id"] = sale_id
             data_dict[sale_id]["site"] = site
-            data_dict[sale_id]["sales_total"] = PriceValue(sales_total).round_half_up()
+            data_dict[sale_id]["sales_total"] = PriceValue(sales_total).get_value()
 
         return data_dict
 
@@ -517,12 +518,12 @@ class StatsDataExtractor:
             qty = ol.qty
             price = ol.value
             # encounter PLU and PLU2nd
-            if ol.item_type == PLU_ITEM_TYPE:
+            if ol.item_type == PLU_ITEM_TYPE or ol.item_type == PLU2ND_ITEM_TYPE:
                 group_id = ol.plu.group_id
                 group_name = ol.plu.group.name
-            elif ol.item_type == PLU2ND_ITEM_TYPE:
-                group_id = ol.plu_2nd.group_id
-                group_name = ol.plu_2nd.group_name
+            # elif ol.item_type == PLU2ND_ITEM_TYPE:
+            #     group_id = ol.plu_2nd.group_id
+            #     group_name = ol.plu_2nd.group_name
             else:
                 continue
 
@@ -555,3 +556,35 @@ class StatsDataExtractor:
             data_dict = dict_write_values(data_dict, ff_id, ff_name, price, qty)
 
         return data_dict
+
+    def calculate_change(self):
+        """
+        Sums up Free Function items with CHANGE field
+
+        This works for CASH-type orderlines (CASH, CASH-10)
+        :return: result sum of total change for period of time
+        """
+        total_change = 0
+
+        for ol in self.orderlines:
+            if ol.item_type == FREE_FUNC_ITEM_TYPE:
+                if ol.change:
+                    total_change += ol.change
+
+        return PriceValue(total_change).get_value()
+
+    def calculate_total_sales(self):
+        """
+        Calculates total sum of Free Function items, change is considered
+        :return: total sum
+        """
+        total_sales = 0
+
+        for ol in self.orderlines:
+            if ol.item_type == FREE_FUNC_ITEM_TYPE:
+                price = ol.value
+                if ol.change:
+                    price -= ol.change
+                total_sales += price
+
+        return PriceValue(total_sales).get_value()
