@@ -52,8 +52,8 @@ def choose_data_class(name):
         return ClerkData
     elif name == DATATYPES_NAMES["customer_name"]:
         return CustomerData
-    elif name == DATATYPES_NAMES["mixmatch_name"]:
-        return MixMatchData
+    # elif name == DATATYPES_NAMES["mixmatch_name"]:
+    #     return MixMatchData
     elif name == DATATYPES_NAMES["tax_name"]:
         return TaxData
     else:
@@ -194,16 +194,6 @@ class CustomerData(MasterData):
         self.email = record.find("Email").text
         self.overdraft_limit = record.find("OverDraftLimit").text
         self.custgroup_number = record.find("CustGroupNo").text
-
-
-class MixMatchData(MasterData):
-    def __init__(self, data, path, record):
-        super(MixMatchData, self).__init__(data, path)
-        self.number = record.find("Number").text
-        self.name = record.find("Name").text
-        self.operation_type = record.find("OperationType").text
-        self.qty_req = record.find("QtyReq").text
-        self.amount = record.find("Amount").text
 
 
 class TaxData(MasterData):

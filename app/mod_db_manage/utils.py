@@ -12,7 +12,6 @@ DATATYPES_NAMES = {
     "plu2nd_name": "PLU 2nd",
     "clerk_name": "Clerk",
     "customer_name": "Customers",
-    "mixmatch_name": "Mix & Match",
     "tax_name": "Tax table"
 }
 

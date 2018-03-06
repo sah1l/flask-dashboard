@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 import traceback
 
 from app import db, base
-from app.models import Organization, FixedTotalizer, FreeFunction, Department, Group, PLU, MixMatch, Tax, \
+from app.models import Organization, FixedTotalizer, FreeFunction, Department, Group, PLU, Tax, \
                         Clerk, Customer, Order, OrderLine
 from app.mod_db_manage.xml_parser import get_orders_gen, get_order_items_gen, extract_master_files_data
 from app.mod_db_manage.config import *
@@ -123,28 +123,6 @@ class DBInsert:
             self.session.commit()
             print(db_dep)
 
-    def insert_mixmatch(self):
-        mixmatch = extract_master_files_data(self.org_dir, DATATYPES_NAMES["mixmatch_name"])
-
-        for mm in mixmatch:
-            mm_duplicate = self.db_check_duplicate(MixMatch, number=mm.number, org_id=self.org_id)
-            if mm_duplicate:
-                continue
-
-            db_mm = MixMatch(number=mm.number,
-                             date_time=mm.date_time,
-                             filepath=mm.filepath,
-                             data_dir=mm.data_dir,
-                             org_id=self.org_id,
-                             name=mm.name,
-                             operation_type=mm.operation_type,
-                             qty_req=mm.qty_req,
-                             amount=mm.amount
-                             )
-            self.session.add(db_mm)
-            self.session.commit()
-            print(db_mm)
-
     def insert_taxes(self):
         taxes = extract_master_files_data(self.org_dir, DATATYPES_NAMES["tax_name"])
 
@@ -175,7 +153,7 @@ class DBInsert:
             if plu_duplicate:
                 continue
 
-            # check for group, department and mixmatch with non-existing number
+            # check for group and department with non-existing number
             valid_group = self.session.query(Group).filter_by(number=plu.group_number).first()
             if not valid_group:
                 plu.group_id = None
@@ -187,12 +165,6 @@ class DBInsert:
                 plu.department_id = None
             else:
                 plu.department_id = valid_dep.id
-
-            valid_mixmatch = self.session.query(MixMatch).filter_by(number=plu.mix_match_number).first()
-            if not valid_mixmatch:
-                plu.mix_match_id = None
-            else:
-                plu.mix_match_id = valid_mixmatch.id
 
             valid_tax = self.session.query(Tax).filter_by(number=plu.tax_number).first()
             if not valid_tax:
@@ -210,51 +182,10 @@ class DBInsert:
                          department_id=plu.department_id,
                          price=plu.price,
                          tax_id=plu.tax_id,
-                         mix_match_id=plu.mix_match_id
                          )
             self.session.add(db_plu)
             self.session.commit()
             print(db_plu)
-
-    # def insert_plu_2nd(self):
-    #     plu_s = extract_master_files_data(self.org_dir, DATATYPES_NAMES["plu2nd_name"])
-    #
-    #     for plu in plu_s:
-    #         plu_duplicate = self.db_check_duplicate(PLU2nd, number=plu.number, org_id=self.org_id)
-    #         if plu_duplicate:
-    #             continue
-    #
-    #         # check for group and department with non-existing number
-    #         valid_group = self.session.query(Group).filter_by(number=plu.group_number).first()
-    #         if not valid_group:
-    #             plu.group_id = None
-    #         else:
-    #             plu.group_id = valid_group.id
-    #
-    #         valid_dep = self.session.query(Department).filter_by(number=plu.department_number).first()
-    #         if not valid_dep:
-    #             plu.department_id = None
-    #         else:
-    #             plu.department_id = valid_dep.id
-    #
-    #         # valid_tax = self.session.query(Tax).filter_by(number=plu.tax_number).first()
-    #         # if not valid_tax:
-    #         #     plu.tax_number = None
-    #
-    #         db_plu = PLU2nd(number=plu.number,
-    #                         date_time=plu.date_time,
-    #                         filepath=plu.filepath,
-    #                         data_dir=plu.data_dir,
-    #                         org_id=self.org_id,
-    #                         name=plu.name,
-    #                         group_id=plu.group_id,
-    #                         department_id=plu.department_id,
-    #                         price=plu.price,
-    #                         # tax_number=plu.tax_number
-    #                         )
-    #         self.session.add(db_plu)
-    #         self.session.commit()
-    #         print(db_plu)
 
     def insert_clerks(self):
         clerks = extract_master_files_data(self.org_dir, DATATYPES_NAMES["clerk_name"])
@@ -308,7 +239,6 @@ class DBInsert:
         Customize OrderLine object with PLU details (for ItemType = 0)
         """
         db_orderline.product_id = self.session.query(PLU).filter_by(number=plu_number).first().id
-        db_orderline.mix_match_id = self.session.query(PLU).filter_by(number=plu_number).first().mix_match_id
 
         return db_orderline
 
@@ -329,11 +259,6 @@ class DBInsert:
         db_orderline.fixed_total_id = fixed_total.id
 
         return db_orderline
-
-    # def customize_orderline_plu_2nd(self, db_orderline, plu2nd_number):
-    #     db_orderline.product_id_2nd = self.session.query(PLU2nd).filter_by(number=plu2nd_number).first().id
-    #
-    #     return db_orderline
 
     def customize_orderline_fixedtotal(self, order_item, db_orderline):
         """Customize OrderLine object with FixedTotalizer details (for ItemType = 4)"""
@@ -472,17 +397,14 @@ if __name__ == "__main__":
             continue
 
         db_insert = DBInsert(session_maker, org_data_path, org_id)
-        # db_insert.create_all_tables()
 
         try:
             db_insert.insert_fixed_totalizer()
             db_insert.insert_free_function()
             db_insert.insert_group()
             db_insert.insert_departments()
-            db_insert.insert_mixmatch()
             db_insert.insert_taxes()
             db_insert.insert_plu()
-            # db_insert.insert_plu_2nd()
             db_insert.insert_clerks()
             db_insert.insert_customers()
             db_insert.insert_order_data()
