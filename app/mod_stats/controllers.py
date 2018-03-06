@@ -42,7 +42,7 @@ def handle_operational_error(error):
 def get_order_details(org_id, order_id):
     """
     Get order details page (Dashboard -> last 100 sales table -> Click on order ID)
-    
+
     :param org_id: id of the organization
     :param order_id: id of the order
     :return: "stats/order_details.html" template with parameters

@@ -543,8 +543,8 @@ class StatsDataExtractor:
                 continue 
 
             ff_name = ol.free_function.name
-            if ff_name == "HOLD":  # skip statistics for HOLD items
-                continue
+            # if ff_name == "HOLD":  # skip statistics for HOLD items
+            #     continue
 
             qty = ol.qty
             price = ol.value
