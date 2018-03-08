@@ -8,7 +8,6 @@ import datetime
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal, ROUND_HALF_UP
 from sqlalchemy import and_
-from sqlalchemy.orm import sessionmaker
 
 from app import db
 from app.models import OrderLine, Order, Organization
@@ -335,21 +334,16 @@ class StatsDataExtractor:
         }
         Summed report is used in most cases in statistics data shown in dashboard
         """
-        session_maker = sessionmaker(db)
-        self.session = session_maker()
         self.org_id = org_id
         self.start_time = start_time
         self.end_time = end_time
-        self.orderlines = self.session.query(OrderLine).join(OrderLine.order).filter(
+        self.orderlines = OrderLine.query.join(OrderLine.order).filter(
             and_(
                 Order.org_id == org_id,
                 Order.date_time >= self.start_time,
                 Order.date_time <= self.end_time
                 )
             )
-
-    def close_session(self):
-        self.session.close()
 
     def dict_write_values(self, dictionary, entry_id, name, price, qty, unique_id=""):
         """
@@ -396,6 +390,7 @@ class StatsDataExtractor:
         for ol in self.orderlines:
             price = ol.value
             qty = ol.qty
+
             # encounter PLU and PLU2nd
             if ol.item_type == PLU_ITEM_TYPE or ol.item_type == PLU2ND_ITEM_TYPE:
                 dep_id = ol.plu.department_id
@@ -485,7 +480,7 @@ class StatsDataExtractor:
         """
         Get last 100 sales
         """
-        orders = self.session.query(Order).filter(and_(
+        orders = Order.query.filter(and_(
             Order.org_id == self.org_id,
             Order.date_time >= self.start_time,
             Order.date_time <= self.end_time
@@ -500,7 +495,7 @@ class StatsDataExtractor:
         for order in orders:
             date_time = order.date_time
             sale_id = order.id
-            site = self.session.query(Organization).filter_by(id=self.org_id).first().name
+            site = Organization.query.filter_by(id=self.org_id).first().name
             sales_total = 0
             
             for item in order.items:

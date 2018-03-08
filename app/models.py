@@ -1,54 +1,86 @@
-from sqlalchemy import Table, Column, String, Integer, Float, DateTime, ForeignKey
+from flask_login import UserMixin
+# from sqlalchemy import Table, Column, String, Integer, Float, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declared_attr
+from werkzeug.security import generate_password_hash, check_password_hash
 
-from app import base
-
-
-"""
-Bind users and organizations
-"""
-users_orgs_association_table = Table("users_orgs_association", base.metadata,
-                                     Column("org_id", Integer, ForeignKey("organizations.id", ondelete="CASCADE")),
-                                     Column("user_id", Integer, ForeignKey("users.id", ondelete="CASCADE")))
+from app import db, login
 
 
-class Organization(base):
+# Bind users and organizations
+users_orgs_association_table = db.Table("users_orgs_association",
+                                        db.Column("org_id",
+                                                  db.Integer,
+                                                  db.ForeignKey("organizations.id", ondelete="CASCADE")),
+                                        db.Column("user_id",
+                                                  db.Integer,
+                                                  db.ForeignKey("users.id", ondelete="CASCADE")))
+
+
+class User(UserMixin, db.Model):
+    __tablename__ = "users"
+
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64))
+    email = db.Column(db.String(120), index=True, unique=True)
+    password_hash = db.Column(db.String(128))
+    is_admin = db.Column(db.Boolean, default=False)
+    organizations = db.relationship("Organization",
+                                 secondary=users_orgs_association_table,
+                                 back_populates="users")
+
+    def __repr__(self):
+        return '<User {}>'.format(self.username)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+
+@login.user_loader
+def load_user(id):
+    user_id = db.session.query(User).get(int(id))
+
+    return user_id
+
+
+class Organization(db.Model):
     __tablename__ = "organizations"
 
-    id = Column(Integer, primary_key=True)
-    name = Column(String(100), unique=True, index=True)
-    data_dir = Column(String(200), unique=True, index=True)
-    users = relationship("User",
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, index=True)
+    data_dir = db.Column(db.String(200), unique=True, index=True)
+    users = db.relationship("User",
                          secondary=users_orgs_association_table,
                          back_populates="organizations")
-    fixed_totalizers = relationship("FixedTotalizer", cascade="delete")
-    free_functions = relationship("FreeFunction", cascade="delete")
-    groups = relationship("Group", cascade="delete")
-    departments = relationship("Department", cascade="delete")
-    taxes = relationship("Tax", cascade="delete")
-    plus = relationship("PLU", cascade="delete")
-    clerks = relationship("Clerk", cascade="delete")
-    customers = relationship("Customer", cascade="delete")
-    orders = relationship("Order", cascade="delete")
+    fixed_totalizers = db.relationship("FixedTotalizer", cascade="delete")
+    free_functions = db.relationship("FreeFunction", cascade="delete")
+    groups = db.relationship("Group", cascade="delete")
+    departments = db.relationship("Department", cascade="delete")
+    taxes = db.relationship("Tax", cascade="delete")
+    plus = db.relationship("PLU", cascade="delete")
+    clerks = db.relationship("Clerk", cascade="delete")
+    customers = db.relationship("Customer", cascade="delete")
+    orders = db.relationship("Order", cascade="delete")
 
 
-class Master(base):
-    """Base class for Master files data"""
+class Master(db.Model):
+    """Base class for Master files data (abstract class, not a table)"""
     __abstract__ = True
 
-    id = Column(Integer, primary_key=True)
-    number = Column(Integer)
-    date_time = Column(DateTime, nullable=False)
-    filepath = Column(String(100), nullable=False)
-    data_dir = Column(String(100), nullable=False)
+    id = db.Column(db.Integer, primary_key=True)
+    number = db.Column(db.Integer)
+    date_time = db.Column(db.DateTime, nullable=False)
+    filepath = db.Column(db.String(100), nullable=False)
+    data_dir = db.Column(db.String(100), nullable=False)
 
 
 class FixedTotalizer(Master):
     __tablename__ = "fixed_totalizers"
 
-    org_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"))
-    name = Column(String(50))
+    org_id = db.Column(db.Integer, db.ForeignKey("organizations.id", ondelete="CASCADE"))
+    name = db.Column(db.String(50))
     orderlines = relationship("OrderLine", back_populates="fixed_totalizer")
 
     def __repr__(self):
@@ -59,9 +91,9 @@ class FixedTotalizer(Master):
 class FreeFunction(Master):
     __tablename__ = "free_functions"
 
-    org_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"))
-    name = Column(String(50))
-    function_number = Column(String(50))
+    org_id = db.Column(db.Integer, db.ForeignKey("organizations.id", ondelete="CASCADE"))
+    name = db.Column(db.String(50))
+    function_number = db.Column(db.String(50))
     orderlines = relationship("OrderLine", back_populates="free_function")
 
     def __repr__(self):
@@ -72,8 +104,8 @@ class FreeFunction(Master):
 class Group(Master):
     __tablename__ = "groups"
 
-    org_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"))
-    name = Column(String(50))
+    org_id = db.Column(db.Integer, db.ForeignKey("organizations.id", ondelete="CASCADE"))
+    name = db.Column(db.String(50))
     departments = relationship("Department", back_populates="group")
     plus = relationship("PLU", back_populates="group")
 
@@ -85,9 +117,9 @@ class Group(Master):
 class Department(Master):
     __tablename__ = "departments"
 
-    org_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"))
-    name = Column(String(50))
-    group_id = Column(Integer, ForeignKey("groups.id"), nullable=True)
+    org_id = db.Column(db.Integer, db.ForeignKey("organizations.id", ondelete="CASCADE"))
+    name = db.Column(db.String(50))
+    group_id = db.Column(db.Integer, db.ForeignKey("groups.id"), nullable=True)
     group = relationship("Group", back_populates="departments")
     plus = relationship("PLU", back_populates="department")
 
@@ -99,9 +131,9 @@ class Department(Master):
 class Tax(Master):
     __tablename__ = "taxes"
 
-    org_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"))
-    name = Column(String(50))
-    rate = Column(Integer)
+    org_id = db.Column(db.Integer, db.ForeignKey("organizations.id", ondelete="CASCADE"))
+    name = db.Column(db.String(50))
+    rate = db.Column(db.Integer)
     plus = relationship("PLU", back_populates="tax")
 
     def __repr__(self):
@@ -112,14 +144,14 @@ class Tax(Master):
 class PLU(Master):
     __tablename__ = "plu"
 
-    org_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"))
-    name = Column(String(50))
-    group_id = Column(Integer, ForeignKey("groups.id"), nullable=True)
+    org_id = db.Column(db.Integer, db.ForeignKey("organizations.id", ondelete="CASCADE"))
+    name = db.Column(db.String(50))
+    group_id = db.Column(db.Integer, db.ForeignKey("groups.id"), nullable=True)
     group = relationship("Group", back_populates="plus")
-    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
+    department_id = db.Column(db.Integer, db.ForeignKey("departments.id"), nullable=True)
     department = relationship("Department", back_populates="plus")
-    price = Column(Float)
-    tax_id = Column(Integer, ForeignKey("taxes.id"), nullable=True)
+    price = db.Column(db.Float)
+    tax_id = db.Column(db.Integer, db.ForeignKey("taxes.id"), nullable=True)
     tax = relationship("Tax", uselist=False, back_populates="plus")
     orderlines = relationship("OrderLine", backref="plu", lazy="dynamic")
 
@@ -131,8 +163,8 @@ class PLU(Master):
 class Clerk(Master):
     __tablename__ = "clerks"
 
-    org_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"))
-    name = Column(String(50))
+    org_id = db.Column(db.Integer, db.ForeignKey("organizations.id", ondelete="CASCADE"))
+    name = db.Column(db.String(50))
     orders = relationship("Order", back_populates="clerk")
 
     def __repr__(self):
@@ -142,66 +174,66 @@ class Clerk(Master):
 class Customer(Master):
     __tablename__ = "customers"
 
-    org_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"))
-    first_name = Column(String(50))
-    surname = Column(String(50))
-    addr1 = Column(String(100))
-    addr2 = Column(String(100))
-    addr3 = Column(String(100))
-    postcode = Column(String(20))
-    phone = Column(String(30))
-    email = Column(String(50))
-    overdraft_limit = Column(String(20))
-    custgroup_number = Column(Integer)
+    org_id = db.Column(db.Integer, db.ForeignKey("organizations.id", ondelete="CASCADE"))
+    first_name = db.Column(db.String(50))
+    surname = db.Column(db.String(50))
+    addr1 = db.Column(db.String(100))
+    addr2 = db.Column(db.String(100))
+    addr3 = db.Column(db.String(100))
+    postcode = db.Column(db.String(20))
+    phone = db.Column(db.String(30))
+    email = db.Column(db.String(50))
+    overdraft_limit = db.Column(db.String(20))
+    custgroup_number = db.Column(db.Integer)
     orders = relationship("Order", backref="customer", lazy="dynamic")
 
     def __repr__(self):
         return "Customer: id=%s first_name=%s surname=%s" % (self.id, self.first_name, self.surname)
 
 
-class Order(base):
+class Order(db.Model):
     __tablename__ = "orders"
 
-    id = Column(Integer, primary_key=True)
-    date_time = Column(DateTime)
-    filepath = Column(String(100))
-    org_id = Column(Integer, ForeignKey("organizations.id", ondelete="CASCADE"))
-    mode = Column(String(50))
-    consecutive_number = Column(Integer)
-    terminal_number = Column(Integer)
-    terminal_name = Column(String(50))
-    clerk_id = Column(Integer, ForeignKey("clerks.id"))
+    id = db.Column(db.Integer, primary_key=True)
+    date_time = db.Column(db.DateTime)
+    filepath = db.Column(db.String(100))
+    org_id = db.Column(db.Integer, db.ForeignKey("organizations.id", ondelete="CASCADE"))
+    mode = db.Column(db.String(50))
+    consecutive_number = db.Column(db.Integer)
+    terminal_number = db.Column(db.Integer)
+    terminal_name = db.Column(db.String(50))
+    clerk_id = db.Column(db.Integer, db.ForeignKey("clerks.id"))
     clerk = relationship("Clerk", back_populates="orders")
-    customer_id = Column(Integer, ForeignKey("customers.id"), nullable=True)
-    table_number = Column(Integer)
-    payment_type = Column(String(20))
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"), nullable=True)
+    table_number = db.Column(db.Integer)
+    payment_type = db.Column(db.String(20))
     items = relationship("OrderLine", back_populates="order", cascade="all, delete-orphan")
 
     def __repr__(self):
         return "Order: ID=%s" % (self.id)
 
 
-class OrderLine(base):
+class OrderLine(db.Model):
     __tablename__ = "order_lines"
 
-    id = Column(Integer, primary_key=True)
-    order_id = Column(Integer, ForeignKey("orders.id", ondelete="CASCADE"), nullable=False)
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey("orders.id", ondelete="CASCADE"), nullable=False)
     order = relationship("Order", uselist=False, back_populates="items")
-    item_type = Column(Integer, nullable=False)
-    qty = Column(Integer, nullable=False)
-    value = Column(Float, nullable=False)
+    item_type = db.Column(db.Integer, nullable=False)
+    qty = db.Column(db.Integer, nullable=False)
+    value = db.Column(db.Float, nullable=False)
 
     # for item type = 0 and 3 (PLU and PLU 2nd)
-    product_id = Column(Integer, ForeignKey("plu.id"), nullable=True)
+    product_id = db.Column(db.Integer, db.ForeignKey("plu.id"), nullable=True)
     product = relationship("PLU")
 
     # for item type = 1 (Free Functions)
-    free_func_id = Column(Integer, ForeignKey("free_functions.id"), nullable=True)
+    free_func_id = db.Column(db.Integer, db.ForeignKey("free_functions.id"), nullable=True)
     free_function = relationship("FreeFunction", uselist=False, back_populates="orderlines")
-    change = Column(Float, nullable=True)  # for cash and cash-related items
+    change = db.Column(db.Float, nullable=True)  # for cash and cash-related items
 
     # for item type = 4 and 1 (Fixed Totalizers and Free Functions)
-    fixed_total_id = Column(Integer, ForeignKey("fixed_totalizers.id"), nullable=True)
+    fixed_total_id = db.Column(db.Integer, db.ForeignKey("fixed_totalizers.id"), nullable=True)
     fixed_totalizer = relationship("FixedTotalizer", uselist=False, back_populates="orderlines")
 
     def __repr__(self):

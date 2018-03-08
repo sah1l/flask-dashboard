@@ -1,8 +1,7 @@
 from flask import Flask
 from flask_login import LoginManager
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from flask_migrate import Migrate
+from flask_sqlalchemy import SQLAlchemy
 
 from config import Config
 
@@ -12,9 +11,34 @@ app = Flask(__name__)
 app.config.from_object(Config)
 
 # database init
-db = create_engine(Config.SQLALCHEMY_DATABASE_URI)
-session_maker = sessionmaker(db)
-base = declarative_base()
+db = SQLAlchemy(app)
+
+
+def session_add(obj):
+    """
+    Custom function for adding data obj to database
+    :param data: data obj needed to save to database
+    """
+    db.session.add(obj)
+
+
+def session_commit():
+    """
+    Custom commit to database
+    """
+    db.session.commit()
+
+
+def session_delete(obj):
+    """
+    Custom delete from database function
+    :param obj: data object to delete
+    """
+    db.session.delete(obj)
+
+
+# migrate init
+migrate = Migrate(app, db)
 
 # login init
 login = LoginManager(app)

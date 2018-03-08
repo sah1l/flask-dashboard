@@ -3,9 +3,7 @@ from flask_login import current_user
 from flask.views import View
 from sqlalchemy.exc import OperationalError
 
-from app import session_maker
-from app.models import Organization, Order
-from app.mod_auth.models import User
+from app.models import Organization, Order, User
 from app.mod_stats.stats_utils import StatsDataExtractor, calc_today_timeframe, calc_yesterday_timeframe, \
     calc_this_week_timeframe, calc_last_week_timeframe, calc_this_month_timeframe, calc_last_month_timeframe, \
     calc_this_quarter_timeframe, calc_last_quarter_timeframe
@@ -47,8 +45,7 @@ def get_order_details(org_id, order_id):
     :param order_id: id of the order
     :return: "stats/order_details.html" template with parameters
     """
-    session = session_maker()
-    order = session.query(Order).filter_by(id=order_id).first()
+    order = Order.query.filter_by(id=order_id).first()
     start_datetime = order.date_time
     end_datetime = order.date_time
 
@@ -63,11 +60,8 @@ def get_order_details(org_id, order_id):
 
     # order details
     clerk_name = order.clerk.name
-    site = session.query(Organization).filter_by(id=org_id).first().name
+    site = Organization.query.filter_by(id=org_id).first().name
     total_sale = data_handler.calculate_total_sales()
-
-    data_handler.close_session()
-    session.close()
 
     return render_template("stats/order_details.html",
                            order=order,
@@ -95,8 +89,6 @@ class ShowDataView(View):
         self.start_datetime = timeframes[0]
         self.end_datetime = timeframes[1]
 
-        self.session = session_maker()
-
     def check_org_id(self, user, _org_id):
         """
         Dashboard URL in left panel doesn't know which organizations are assigned to the user
@@ -119,14 +111,14 @@ class ShowDataView(View):
         except:
             pass
 
-        user = self.session.query(User).filter_by(id=current_user.id).first()
+        user = User.query.filter_by(id=current_user.id).first()
 
         # user does not have any organizations
         if not user.organizations:
             return render_template("stats/base.html", error_message="You do not have any organizations yet.")
 
         self.org_id = self.check_org_id(user, self.org_id)
-        org_name = self.session.query(Organization).filter_by(id=self.org_id).first().name
+        org_name = Organization.query.filter_by(id=self.org_id).first().name
 
         # getting statistics data
         data_handler = StatsDataExtractor(self.org_id, self.start_datetime, self.end_datetime)
@@ -137,21 +129,18 @@ class ShowDataView(View):
         clerks_breakdown_data = data_handler.get_clerks_breakdown()
         group_sales_total_data = data_handler.get_group_sales_data()
         free_function_data = data_handler.get_free_func()
-        data_handler.close_session()
 
         # choose organization form
         org_form = CustomizeStatsForm()
         orgs = user.organizations
         org_form.organization.choices = [(org.id, org.name) for org in orgs]
 
-        self.session.close()
-
         if org_form.validate_on_submit():
             new_org_id = org_form.organization.data
-            return redirect(url_for("stats.{}".format(self.route_name),
+
+            return redirect(url_for("stats.show_today",
                                     org_id=new_org_id,
-                                    start_date=self.start_datetime,
-                                    end_date=self.end_datetime))
+                                    ))
 
         # custom timeline form
         dt_form = CustomTimeSliceForm()

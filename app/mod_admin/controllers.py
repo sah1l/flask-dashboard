@@ -1,9 +1,8 @@
 from flask import Blueprint, redirect, url_for, render_template
 from flask_login import current_user
 
-from app import session_maker
-from app.models import Organization
-from app.mod_auth.models import User
+from app import session_commit, session_add, session_delete
+from app.models import Organization, User
 from app.mod_admin.forms import OrgInfoForm, OrgCreateForm, UserCreateForm, UserInfoForm, EmailForm, PasswordForm
 
 # define Blueprint for admin module
@@ -25,17 +24,14 @@ def check_authenticated_user():
 
 @mod_admin.route("/", methods=["GET"])
 def show_panel():
-    session = session_maker()
-    users = session.query(User).all()
-    session.close()
+    users = User.query.all()
     return render_template("admin_panel/list_users.html", users=users)
 
 
 @mod_admin.route("/add_user", methods=["GET", "POST"])
 def add_user():
-    session = session_maker()
     form = UserCreateForm()
-    orgs = session.query(Organization).all()
+    orgs = Organization.query.all()
     form.organizations.choices = [(org.id, org.name) for org in orgs]
 
     if form.validate_on_submit():
@@ -47,13 +43,13 @@ def add_user():
         orgs = []
 
         for org_id in form.organizations.data:
-            org = session.query(Organization).filter_by(id=org_id).first()
+            org = Organization.query.filter_by(id=org_id).first()
             orgs.append(org)
 
         user.organizations = orgs
-        session.add(user)
-        session.commit()
-        session.close()
+        session_add(user)
+        session_commit()
+
         return redirect(url_for("admin.show_panel"))
 
     return render_template('admin_panel/create_user.html', form=form)
@@ -62,9 +58,8 @@ def add_user():
 @mod_admin.route("/edit_user/<user_id>", methods=["GET", "POST"])
 def change_userinfo(user_id):
     form = UserInfoForm()
-    session = session_maker()
-    user = session.query(User).filter_by(id=user_id).first()
-    orgs = session.query(Organization).all()
+    user = User.query.filter_by(id=user_id).first()
+    orgs = Organization.query.all()
     form.organizations.choices = [(org.id, org.name) for org in orgs]
 
     if form.validate_on_submit():
@@ -73,12 +68,12 @@ def change_userinfo(user_id):
         orgs = []
 
         for org_id in form.organizations.data:
-            org = session.query(Organization).filter_by(id=org_id).first()
+            org = Organization.query.filter_by(id=org_id).first()
             orgs.append(org)
 
         user.organizations = orgs
-        session.commit()
-        session.close()
+        session_commit()
+
         return redirect(url_for("admin.show_panel"))
 
     return render_template("admin_panel/change_userinfo.html", form=form, user=user)
@@ -87,13 +82,12 @@ def change_userinfo(user_id):
 @mod_admin.route("/edit_user/<user_id>/email", methods=["GET", "POST"])
 def change_email(user_id):
     form = EmailForm()
-    session = session_maker()
-    user = session.query(User).filter_by(id=user_id).first()
+    user = User.query.filter_by(id=user_id).first()
 
     if form.validate_on_submit():
         user.email = form.email.data
-        session.commit()
-        session.close()
+        session_commit()
+
         return redirect(url_for("admin.show_panel"))
 
     return render_template("admin_panel/change_email.html", form=form, user=user)
@@ -102,13 +96,12 @@ def change_email(user_id):
 @mod_admin.route("/edit_user/<user_id>/password", methods=["GET", "POST"])
 def change_password(user_id):
     form = PasswordForm()
-    session = session_maker()
-    user = session.query(User).filter_by(id=user_id).first()
+    user = User.query.filter_by(id=user_id).first()
 
     if form.validate_on_submit():
         user.set_password(form.password.data)
-        session.commit()
-        session.close()
+        session_commit()
+
         return redirect(url_for("admin.show_panel"))
 
     return render_template("admin_panel/change_password.html", form=form, user=user)
@@ -116,29 +109,24 @@ def change_password(user_id):
 
 @mod_admin.route("/delete_user/<user_id>", methods=["GET", "POST"])
 def delete_user(user_id):
-    session = session_maker()
-    user = session.query(User).filter_by(id=user_id).first()
-    session.delete(user)
-    session.commit()
-    session.close()
+    user = User.query.filter_by(id=user_id).first()
+    session_delete(user)
+    session_commit()
 
     return redirect(url_for("admin.show_panel"))
 
 
 @mod_admin.route("/list_organizations", methods=["GET"])
 def list_organizations():
-    session = session_maker()
-    orgs = session.query(Organization).all()
-    session.close()
+    orgs = Organization.query.all()
 
     return render_template("admin_panel/list_organizations.html", orgs=orgs)
 
 
 @mod_admin.route("/add_organization", methods=["GET", "POST"])
 def add_organization():
-    session = session_maker()
     form = OrgCreateForm()
-    users = session.query(User).all()
+    users = User.query.all()
     # empty_choice = [(0, " " * 10)]
     form.users.choices = [(user.id, user.email) for user in users]
 
@@ -148,13 +136,12 @@ def add_organization():
         users = []
 
         for user_id in form.users.data:
-            user = session.query(User).filter_by(id=user_id).first()
+            user = User.query.filter_by(id=user_id).first()
             users.append(user)
 
         org.users = users
-        session.add(org)
-        session.commit()
-        session.close()
+        session_add(org)
+        session_commit()
 
         return redirect(url_for("admin.add_organization"))
 
@@ -164,10 +151,9 @@ def add_organization():
 @mod_admin.route("/edit_organization/<org_id>", methods=["GET", "POST"])
 def edit_organization(org_id):
     form = OrgInfoForm()
-    session = session_maker()
-    users = session.query(User).all()
+    users = User.query.all()
     form.users.choices = [(user.id, user.email) for user in users]
-    org = session.query(Organization).filter_by(id=org_id).first()
+    org = Organization.query.filter_by(id=org_id).first()
 
     if form.validate_on_submit():
         org.name = form.name.data
@@ -175,12 +161,11 @@ def edit_organization(org_id):
         users = []
 
         for user_id in form.users.data:
-            user = session.query(User).filter_by(id=user_id).first()
+            user = User.quuery.filter_by(id=user_id).first()
             users.append(user)
 
         org.users = users
-        session.commit()
-        session.close()
+        session_commit()
 
         return redirect(url_for("admin.list_organizations"))
 
@@ -189,10 +174,8 @@ def edit_organization(org_id):
 
 @mod_admin.route("/delete_organization/<org_id>", methods=["GET", "POST"])
 def delete_organization(org_id):
-    session = session_maker()
-    org = session.query(Organization).filter_by(id=org_id).first()
-    session.delete(org)
-    session.commit()
-    session.close()
+    org = Organization.query.filter_by(id=org_id).first()
+    session_delete(org)
+    session_commit()
 
     return redirect(url_for("admin.list_organizations"))

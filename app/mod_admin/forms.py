@@ -2,12 +2,19 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, SelectMultipleField, PasswordField, BooleanField, widgets
 from wtforms.validators import DataRequired, Email, EqualTo, Length
 
-from app import session_maker
-from app.models import Organization
-from app.mod_auth.models import User
+from app.models import Organization, User
 
 
 class UserInfoForm(FlaskForm):
+    """
+    Edit user form
+
+    Fields:
+
+    - username (string field)
+    - is_admin (checkbox)
+    - organizations (select multiple field)
+    """
     username = StringField('Username', validators=[DataRequired()])
     is_admin = BooleanField('Is Admin', default=False)
     organizations = SelectMultipleField('Organizations',
@@ -18,11 +25,26 @@ class UserInfoForm(FlaskForm):
 
 
 class EmailForm(FlaskForm):
+    """
+    Edit email form
+
+    Fields:
+
+    -email (string field)
+    """
     email = StringField('Email', validators=[DataRequired(), Email()])
     submit = SubmitField('Update email')
 
 
 class PasswordForm(FlaskForm):
+    """
+    Edit password form
+
+    Fields:
+
+    - type password (password field)
+    - retype password (password field)
+    """
     password = PasswordField('Password', validators=[DataRequired(), Length(min=5, max=20)])
     password2 = PasswordField('Repeat Password', validators=[DataRequired(), EqualTo('password')])
     submit = SubmitField('Update password')
@@ -30,7 +52,10 @@ class PasswordForm(FlaskForm):
 
 class UserCreateForm(UserInfoForm, EmailForm, PasswordForm):
     """
-    Registration form for new user
+    Registration form for new user.
+
+    Consists of UserInfoForm, EmailForm, PasswordForm and personal submit button.
+    Custom validation.
     """
     submit = SubmitField('Add user')
 
@@ -39,21 +64,35 @@ class UserCreateForm(UserInfoForm, EmailForm, PasswordForm):
         self.user = None
 
     def validate(self):
+        """
+        Checks if user exists already (by email)
+
+        :return: If the user exists already, return False, else True
+        """
         rv = FlaskForm.validate(self)
         if not rv:
             return False
 
-        session = session_maker()
-        user = session.query(User).filter_by(email=self.email.data).first()
+        user = User.query.filter_by(email=self.email.data).first()
+
         if user:
             self.email.errors.append("This email is already taken.")
-            session.close()
             return False
 
         return True
 
 
 class OrgInfoForm(FlaskForm):
+    """
+    Edit Organization information form
+
+    Field:
+
+    - name (string field)
+    - data directory (string field)
+    - users (select multiple field)
+    - submit button
+    """
     name = StringField('Organization Name', validators=[DataRequired()])
     data_dir = StringField('Data directory', validators=[DataRequired()])
     users = SelectMultipleField('Users',
@@ -65,7 +104,9 @@ class OrgInfoForm(FlaskForm):
 
 class OrgCreateForm(OrgInfoForm):
     """
-    Create form for an organization
+    Create form for organization
+
+    Custom validation
     """
 
     def __init__(self, *args, **kwargs):
@@ -73,22 +114,22 @@ class OrgCreateForm(OrgInfoForm):
         self.org = None
 
     def validate(self):
+        """
+        Checks if Organization name and data directory are valid
+        :return: True if both fields are valid, False if name or data directory are not valid
+        """
         rv = FlaskForm.validate(self)
         if not rv:
             return False
 
-        session = session_maker()
-        org = session.query(Organization).filter_by(name=self.name.data).first()
+        org = Organization.query.filter_by(name=self.name.data).first()
         if org:
             self.name.errors.append("An organization with this name exists already.")
-            session.close()
             return False
 
-        org = session.query(Organization).filter_by(data_dir=self.data_dir.data).first()
+        org = Organization.query.filter_by(data_dir=self.data_dir.data).first()
         if org:
             self.data_dir.errors.append("Please choose another directory.")
-            session.close()
             return False
 
-        session.close()
         return True
