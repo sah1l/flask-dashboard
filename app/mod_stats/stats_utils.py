@@ -394,6 +394,11 @@ class StatsDataExtractor:
             # encounter PLU and PLU2nd
             if ol.item_type == PLU_ITEM_TYPE or ol.item_type == PLU2ND_ITEM_TYPE:
                 dep_id = ol.plu.department_id
+
+                # some product may not have a department
+                if not dep_id:
+                    continue
+
                 dep_name = ol.plu.department.name
             else:
                 continue
@@ -421,6 +426,10 @@ class StatsDataExtractor:
 
             # calculate taxes
             if ol.item_type == PLU_ITEM_TYPE or ol.item_type == PLU2ND_ITEM_TYPE:
+                
+                # some product may not have a tax
+                if not ol.plu.tax_id:
+                    continue
 
                 tax_name = ol.plu.tax.name
                 tax_rate = int(ol.plu.tax.rate)
@@ -551,6 +560,11 @@ class StatsDataExtractor:
             # encounter PLU and PLU2nd
             if ol.item_type == PLU_ITEM_TYPE or ol.item_type == PLU2ND_ITEM_TYPE:
                 group_id = ol.plu.group_id
+
+                # some product may not have a group
+                if not group_id:
+                    continue
+
                 group_name = ol.plu.group.name
             else:
                 continue
