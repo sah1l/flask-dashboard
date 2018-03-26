@@ -90,18 +90,39 @@ def get_order_xml(org_path):
                 yield orders_xml_dir + "/" + of
 
 
+def get_mfdir_anycase(group_path):
+    """
+    Name of group dirs can be of different cases, for example:
+    - MASTER FILES
+    - Master Files
+    - master files
+
+    to avoid non-existing path of wrong-case directory, this function checks for lowercase 'master'
+
+    :param group_path: path of group directory
+    :return: path for master files directory or None
+    """
+    possible_dirs = os.listdir(group_path)
+    for dirname in possible_dirs:
+        dirname_lower = dirname.lower()
+
+        if 'master' in dirname_lower and os.path.isdir(os.path.join(group_path, dirname)):
+            return os.path.join(group_path, dirname)
+
+    return None
+
+
 def get_mf_dir(org_path, group_dir_name):
     """Get xml files with Master Files data"""
-    group_dir = os.path.join(org_path, group_dir_name)
-    master_files_dir = os.path.join(group_dir, "Master Files")
-    if not os.path.isdir(master_files_dir):
-        master_files_dir = os.path.join(group_dir, "MASTER FILES")
+    group_path = os.path.join(org_path, group_dir_name)
+    master_files_dir = get_mfdir_anycase(group_path)
 
     return master_files_dir
 
 
 def get_mf_xml(mf_dir):
     """Return all files from Master Files directories"""
+    print(mf_dir)
     master_files_xml = os.listdir(mf_dir)
 
     return master_files_xml
