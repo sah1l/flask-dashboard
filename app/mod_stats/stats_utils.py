@@ -9,9 +9,8 @@ from dateutil.relativedelta import relativedelta
 from decimal import Decimal, ROUND_HALF_UP
 from sqlalchemy import and_
 
-from app import db
 from app.models import OrderLine, Order, Organization
-from app.mod_db_manage.config import FREE_FUNC_ITEM_TYPE, PLU_ITEM_TYPE, PLU2ND_ITEM_TYPE
+from app.mod_db_manage.config import FREE_FUNC_ITEM_TYPE, PLU_ITEM_TYPE, PLU2ND_ITEM_TYPE, TENDER_FUNCTION_NUMBER
 
 
 def calc_today_timeframe():
@@ -204,7 +203,7 @@ def gross_net_fill_values(dictionary):
     return dictionary
 
 
-def accumulate_gross_net(dictionary, item_type, price, qty):
+def accumulate_gross_net(dictionary, item_type, price, qty, func_number):
     """
     Sums up Gross and Net values
 
@@ -221,6 +220,7 @@ def accumulate_gross_net(dictionary, item_type, price, qty):
     PLU/PLU 2nd or Free Function, see app/mod_db_manage/config.py)
     :param price: price value
     :param qty: quantity value
+    :param func_number: number of function (we look for a certain one, tender function)
     :return: dictionary with updated values of Gross and Net
     """
     price = PriceValue(price).get_value()
@@ -232,7 +232,7 @@ def accumulate_gross_net(dictionary, item_type, price, qty):
         dictionary["Gross"]["price_sum"] = PriceValue(dictionary["Gross"]["price_sum"]).get_value()
         dictionary["Gross"]["qty_sum"] += qty
     # Calculating Net
-    elif item_type == FREE_FUNC_ITEM_TYPE:
+    elif item_type == FREE_FUNC_ITEM_TYPE and func_number == TENDER_FUNCTION_NUMBER:
         dictionary["Net"]["price_sum"] += price
         dictionary["Net"]["price_sum"] = PriceValue(dictionary["Net"]["price_sum"]).get_value()
         dictionary["Net"]["qty_sum"] += qty
@@ -423,6 +423,7 @@ class StatsDataExtractor:
             
             qty = ol.qty
             price = PriceValue(ol.value).get_value()
+            func_number = ol.func_number
 
             # calculate taxes
             if ol.item_type == PLU_ITEM_TYPE or ol.item_type == PLU2ND_ITEM_TYPE:
@@ -445,7 +446,9 @@ class StatsDataExtractor:
             # there are such free functions as '3 for 2' (Group 3/Order2)
             # that have 1 item type and None free func, also with negative value
             # this value spoils results so check for None there
-            elif ol.item_type == FREE_FUNC_ITEM_TYPE and ol.free_func_id is not None:
+            elif ol.item_type == FREE_FUNC_ITEM_TYPE \
+                    and ol.free_func_id is not None \
+                    and func_number == TENDER_FUNCTION_NUMBER:
 
                 # consider change for CASH-type items
                 if ol.change:
@@ -454,7 +457,7 @@ class StatsDataExtractor:
                 ft_name = ol.fixed_totalizer.name
                 data_dict = self.dict_write_values(data_dict, ft_name, ft_name, price, qty)
 
-            data_dict = accumulate_gross_net(data_dict, ol.item_type, price, qty)
+            data_dict = accumulate_gross_net(data_dict, ol.item_type, price, qty, func_number)
 
         return data_dict
 
@@ -511,7 +514,7 @@ class StatsDataExtractor:
                 # count only Free Function item types that mean result values
                 # if delete this, PLU and PLU 2nd items' values will be added to result values
                 # this will cause doubling results
-                if item.item_type == FREE_FUNC_ITEM_TYPE:
+                if item.item_type == FREE_FUNC_ITEM_TYPE and item.func_number == TENDER_FUNCTION_NUMBER:
                     sales_total += item.value
 
                     # consider change:
@@ -534,7 +537,7 @@ class StatsDataExtractor:
 
         for ol in self.orderlines:
             # count only free functions
-            if ol.item_type == FREE_FUNC_ITEM_TYPE:
+            if ol.item_type == FREE_FUNC_ITEM_TYPE and ol.func_number == TENDER_FUNCTION_NUMBER:
                 clerk_name = ol.order.clerk.name
                 clerk_id = ol.order.clerk_id
                 price = ol.value
@@ -584,9 +587,8 @@ class StatsDataExtractor:
             if ff_id is None:
                 continue 
 
-            ff_name = ol.free_function.name
-            # if ff_name == "HOLD":  # skip statistics for HOLD items
-            #     continue
+            ff_name = ol.free_function.name  # in case we want to see a name of a function
+            # ff_name = ol.name  # in case we want to see a name of an orderline
 
             qty = ol.qty
             price = ol.value
@@ -625,7 +627,7 @@ class StatsDataExtractor:
         total_sales = 0
 
         for ol in self.orderlines:
-            if ol.item_type == FREE_FUNC_ITEM_TYPE:
+            if ol.item_type == FREE_FUNC_ITEM_TYPE and ol.func_number == TENDER_FUNCTION_NUMBER:
                 price = ol.value
                 if ol.change:
                     price -= ol.change

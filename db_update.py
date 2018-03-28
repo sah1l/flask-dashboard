@@ -252,10 +252,11 @@ class DBInsert:
 
         # for counting CAID, CRID, CHID and CQID (id-drawers)
         fixed_total_number = int(order_item.option[-1]) + MAGIC_INDRAWER_NUMBER
-        # fixed_total = FixedTotalizer.query.filter_by(number=fixed_total_number).first()
-        # db_orderline.fixed_total_id = fixed_total.id
         fixed_total_id = FixedTotalizer.query.filter_by(org_id=self.org_id, number=fixed_total_number).first().id
         db_orderline.fixed_total_id = fixed_total_id
+
+        # find tender function
+        db_orderline.func_number = order_item.func_number
 
         return db_orderline
 
@@ -277,13 +278,20 @@ class DBInsert:
             db_orderline.qty = order_item.qty
 
             # work with VOID free functions
-            # add free function VOID
+            # add to free function VOID
             if "VD:" in order_item.name:
                 void_free_function = FreeFunction.query.filter_by(org_id=self.org_id, name='VOID').first()
                 db_orderline.free_func_id = void_free_function.id
 
+            # work with CANCEL free functions
+            # add to free function CANCEL
+            elif "CL:" in order_item.name:
+                cancel_free_function = FreeFunction.query.filter_by(org_id=self.org_id, name='CANCEL').first()
+                db_orderline.free_func_id = cancel_free_function.id
+
             db_orderline.value = order_item.value
             db_orderline.item_type = order_item.item_type
+            db_orderline.name = order_item.name
 
             # process PLU-type item
             if order_item.item_type == str(PLU_ITEM_TYPE):

@@ -21,8 +21,4 @@
         {% endfor %}
     </tbody>
 </table>
-{% set total_qty = free_function_data.values()|sum(attribute='qty_sum') %}
-{% set total_price = free_function_data.values()|sum(attribute='price_sum') %}
-<p>Total quantity: {{ total_qty }}</p>
-<p>Total price: {{ '%0.2f'| format(total_price|float) }}</p>
 {% endblock %}

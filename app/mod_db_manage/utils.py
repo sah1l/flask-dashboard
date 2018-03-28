@@ -122,7 +122,6 @@ def get_mf_dir(org_path, group_dir_name):
 
 def get_mf_xml(mf_dir):
     """Return all files from Master Files directories"""
-    print(mf_dir)
     master_files_xml = os.listdir(mf_dir)
 
     return master_files_xml
@@ -133,7 +132,8 @@ def check_tag_length(tag_text):
     if tag_text is None:
         return False
 
-    tag_content = re.findall("\w+", tag_text)
+    # tag_content = re.findall("\w+", tag_text)
+    tag_content = re.findall("[^\s].*", tag_text)
 
     if len(tag_content) > 0:
         return True

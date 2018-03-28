@@ -52,8 +52,6 @@ def choose_data_class(name):
         return ClerkData
     elif name == DATATYPES_NAMES["customer_name"]:
         return CustomerData
-    # elif name == DATATYPES_NAMES["mixmatch_name"]:
-    #     return MixMatchData
     elif name == DATATYPES_NAMES["tax_name"]:
         return TaxData
     else:
@@ -162,17 +160,6 @@ class PLUData(MasterData):
             self.mix_match_number = None
 
 
-# class PLU2ndData(MasterData):
-#     def __init__(self, data, path, record):
-#         super(PLU2ndData, self).__init__(data, path)
-#         self.number = record.find("Number").text
-#         self.name = record.find("Name").text
-#         self.group_number = record.find("GroupNo").text
-#         self.department_number = record.find("DepartmentNo").text
-#         self.price = record.find("Price").text
-#         self.tax_number = record.find("TaxNo").text
-
-
 class ClerkData(MasterData):
     def __init__(self, data, path, record):
         super(ClerkData, self).__init__(data, path)
@@ -233,3 +220,8 @@ class ItemData():
             self.option = item.find("Options").text
         except:
             self.option = None
+
+        try:
+            self.func_number = item.find("FuncNo").text
+        except:
+            self.func_number = None

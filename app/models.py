@@ -220,6 +220,8 @@ class OrderLine(db.Model):
     order_id = db.Column(db.Integer, db.ForeignKey("orders.id", ondelete="CASCADE"), nullable=False)
     order = relationship("Order", uselist=False, back_populates="items")
     item_type = db.Column(db.Integer, nullable=False)
+    func_number = db.Column(db.Integer, nullable=True)
+    name = db.Column(db.String(50))
     qty = db.Column(db.Integer, nullable=False)
     value = db.Column(db.Float, nullable=False)
 
