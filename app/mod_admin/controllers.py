@@ -161,7 +161,7 @@ def edit_organization(org_id):
         users = []
 
         for user_id in form.users.data:
-            user = User.quuery.filter_by(id=user_id).first()
+            user = User.query.filter_by(id=user_id).first()
             users.append(user)
 
         org.users = users
