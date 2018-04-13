@@ -10,7 +10,16 @@ from decimal import Decimal, ROUND_HALF_UP
 from sqlalchemy import and_
 
 from app.models import OrderLine, Order, Organization
-from app.mod_db_manage.config import FREE_FUNC_ITEM_TYPE, PLU_ITEM_TYPE, PLU2ND_ITEM_TYPE, TENDER_FUNCTION_NUMBER
+from app.mod_db_manage.config import FREE_FUNC_ITEM_TYPE, PLU_ITEM_TYPE, PLU2ND_ITEM_TYPE, TENDER_FUNCTION_NUMBER,\
+    VOID_NAME_IDENTIFIER
+
+
+# The following functions have a fixed quantity of 1:
+#+, -, +%, -%, tender (cash, card, etc), no sale, paid out, Deposit,
+# Receive on account, media exchange, tip, pay account, membership fee.
+# So, ONE_QTY_SET has FunctionNo data for Free Functions mentioned above
+ONE_QTY_SET = ["TENDER", "+", "-", "+%", "-%",  "NS", "PAID OUT", "DEPOSIT", "MEDIA EXCHANGE", "TIP",
+               "PAID ON ACCOUNT", "PAY ACCOUNT", "ADD CHECKS"]
 
 
 def calc_today_timeframe():
@@ -224,6 +233,7 @@ def accumulate_gross_net(dictionary, item_type, price, qty, func_number):
     :return: dictionary with updated values of Gross and Net
     """
     price = PriceValue(price).get_value()
+    # print(item_type)
 
     # Calculating Gross
     if item_type == PLU_ITEM_TYPE or item_type == PLU2ND_ITEM_TYPE:
@@ -411,6 +421,7 @@ class StatsDataExtractor:
         """
         Accumulates values for fixed totals according to asked period of time
         Gross values:
+
         :return: dictionary with accumulated values of fixed totals
         """
         data_dict = {}
@@ -432,16 +443,22 @@ class StatsDataExtractor:
                 if not ol.plu.tax_id:
                     continue
 
+                # print('this product has tax')
                 tax_name = ol.plu.tax.name
+                # print('tax name', tax_name)
                 tax_rate = int(ol.plu.tax.rate)
+                # print('tax rate', tax_rate)
                 tax_name_amt = tax_name + " AMT"
+                # print('amount', tax_name_amt)
                 vat, net_amount = calculate_vat_net(tax_rate, price)
+                # print('vat', vat, 'net amount', net_amount)
 
                 if tax_name in data_dict.keys():
                     data_dict[tax_name]["price_sum"] += vat
                     data_dict[tax_name_amt]["price_sum"] += net_amount
                 else:
                     tax_fill_values(data_dict, tax_name, tax_name_amt, vat, net_amount)
+                # print(data_dict)
 
             # there are such free functions as '3 for 2' (Group 3/Order2)
             # that have 1 item type and None free func, also with negative value
@@ -458,12 +475,16 @@ class StatsDataExtractor:
                 data_dict = self.dict_write_values(data_dict, ft_name, ft_name, price, qty)
 
             data_dict = accumulate_gross_net(data_dict, ol.item_type, price, qty, func_number)
+        # print(data_dict)
 
         return data_dict
 
     def get_plu_sales_data(self, detailed_report=False):
         """
         Get PLU sales
+
+        :param detailed_report: True for order details page (/sale_<sale_id>), False for general statistics page
+        :return: dictionary with accumulated values of PLU sales
         """
         data_dict = {}
 
@@ -483,6 +504,10 @@ class StatsDataExtractor:
                 unique_id = ol.id
             else:
                 unique_id = ""
+
+            # add "**VOID**" word to the product name if it is a VOIDED product
+            if ol.free_function and ol.free_function.name == "VOID":
+                product_name = VOID_NAME_IDENTIFIER + product_name
 
             data_dict = self.dict_write_values(data_dict, product_id, product_name, price, qty, unique_id=unique_id)
 
@@ -576,32 +601,91 @@ class StatsDataExtractor:
 
         return data_dict
 
-    def get_free_func(self):
+    def get_free_func(self, detailed_report=False):
         """
         Get Free functions data
+
+        :param detailed_report: True for order details page (/sale_<sale_id>), False for general statistics page
+        If True:
+            - doesn't subtract change from CASH-type Tender functions
+            - show specific Free Functions name specified in orderline
+
+                In other words,
+                in orderline, free function's name may be another
+                Example:
+                in master files, function is called 'FREE TEXT'
+                but in orderline, it's called 'NO SAUCE'
+                so in detailed report, second (full) name will be shown
+            - price and quantity are always positive except for DEPOSIT function
+
+        If False:
+            - doesn't encounter HOLD free functions (it will not be shown in a table)
+            - doesn't encounter FREE TEXT free functions (it will not be shown in a table)
+            - subtract change from CASH-type Tender functions
+            - show function name from master files if detailed report is not necessary
+            - price and quantity are always positive
         """
         data_dict = {}
 
         for ol in self.orderlines:
             ff_id = ol.free_func_id
             if ff_id is None:
-                continue 
+                continue
 
-            ff_name = ol.free_function.name  # in case we want to see a name of a function
-            # ff_name = ol.name  # in case we want to see a name of an orderline
-
-            qty = ol.qty
+            qty = self.get_free_function_qty(ol)
             price = ol.value
 
+            # turn everything into positive values
+            price = abs(price)
+            qty = abs(qty)
+
+            if not detailed_report:
+                # don't encounter HOLD free function
+                if ol.free_function.name == "HOLD":
+                    continue
+
+                # don't encounter FREE TEXT free function
+                if ol.free_function.name == "FREE TEXT":
+                    continue
+
+                # choose name
+                ff_name = ol.free_function.name
+
+                # subtract change from CASH-type Tender functions
+                if ol.change:
+                    price -= ol.change
+
+            else:
+                # name of the orderline
+                ff_name = ol.name
+
+                # for DEPOSIT free function, make price negative
+                if ol.free_function.function_number == "DEPOSIT":
+                    price = -price
+
             # VOID has negative values, so convert them to positive
-            # this will show VOIDs in free function data, but, with positive values!
-            if ff_name == "VOID":
-                qty = abs(qty)
-                price = abs(price)
+            # this will show VOIDs in free function data, but, with positive values
+            # if ff_name == "VOID":
+            #     qty = abs(qty)
+            #     price = abs(price)
 
             data_dict = self.dict_write_values(data_dict, ff_id, ff_name, price, qty)
 
         return data_dict
+
+    def get_free_function_qty(self, ol):
+        """
+        Some Free Functions have a fixed quantity equal to 1.
+        This is not specified anywhere :( So had to hardcode this in ONE_QTY_SET.
+        Thus, method checks if Free Function's function_number field in in ONE_QTY_SET.
+
+        :param ol: orderline
+        :return: 1 if quantity is fixed, <qty> if has some other quantity.
+        """
+        if ol.free_function.function_number in ONE_QTY_SET:
+            return 1
+        else:
+            return ol.qty
 
     def calculate_change(self):
         """

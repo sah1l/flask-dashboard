@@ -52,7 +52,7 @@ def get_order_details(org_id, order_id):
     # sales details
     data_handler = StatsDataExtractor(org_id, start_datetime, end_datetime)
     plu_sales_data = data_handler.get_plu_sales_data(detailed_report=True)
-    free_func_sales_data = data_handler.get_free_func()
+    free_func_sales_data = data_handler.get_free_func(detailed_report=True)
     change = data_handler.calculate_change()
     group_sales_data = data_handler.get_group_sales_data()
     department_sales_data = data_handler.get_department_sales_data()

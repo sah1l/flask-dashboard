@@ -1,4 +1,5 @@
 /__pycache__
+/.pytest_cache
 app/__pycache__
 app/mod_db_manage/__pycache__
 app/mod_db_manage/xml_data
